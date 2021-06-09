@@ -1,1 +1,1 @@
-# EncryptionApp
+# NIS Encryption Application Assignment
