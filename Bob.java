@@ -45,8 +45,6 @@ class Bob {
 
                     try {
                         outMessage = keyboardIn.readLine();
-
-                        // Send message to Alice
                         sendStream.println(outMessage);
 
                         if (outMessage.equals("exit")) {

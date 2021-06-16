@@ -16,28 +16,25 @@ class Alice {
         String contactName = "Bob";
 
         // to send data to the server
-        DataOutputStream outputStream = new DataOutputStream(s.getOutputStream());
+        DataOutputStream dos = new DataOutputStream(s.getOutputStream());
 
         // to read data coming from the server
-        BufferedReader inputReader = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
-        // repeat as long as exit
-        // is not typed at client
-
         Thread sendMessage = new Thread(new Runnable() {
+            String outMessage;
+
             @Override
             public void run() {
                 while (true && !exit) {
 
-                    // read the message to deliver.
-                    String outMessage = keyboard.nextLine();
-
                     try {
-                        // write on the output stream
-                        outputStream.writeBytes(outMessage + "\n");
+
+                        outMessage = keyboard.nextLine();
+                        dos.writeBytes(outMessage + "\n");
 
                         if (outMessage.equals("exit")) {
                             exit = true;
@@ -50,20 +47,21 @@ class Alice {
                 System.exit(0);
             }
         });
-        
         // readMessage thread
         Thread readMessage = new Thread(new Runnable() {
+            String inMessage;
+
             @Override
             public void run() {
 
                 while (true && !exit) {
                     try {
-                        // read the message sent to this client
-                        String inMessage = inputReader.readLine();
-                        if (inMessage.equals("exit")) {
+
+                        String inMessage = br.readLine();
+
+                        if (inMessage.equals("exit") || !exit) {
                             exit = true;
                             s.close();
-                            keyboard.close();
                         } else {
                             System.out.println(contactName + ": " + inMessage);
                         }
