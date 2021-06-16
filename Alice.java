@@ -4,13 +4,13 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 class Alice {
-
-	public static void main(String[] args)
+    static boolean exit = false;
+	public static void main(String[] args) throws IOException
 	{
-        try
-        {
+        
         System.out.println("Alice is out of bed.");
 		// Create client socket
 		Socket s = new Socket("localhost", 888);
@@ -28,38 +28,69 @@ class Alice {
 					s.getInputStream()));
 
 		// to read data from the keyboard
-		BufferedReader kb
-			= new BufferedReader(
-				new InputStreamReader(System.in));
+        Scanner keyboard = new Scanner(System.in);
 		String str, str1;
 
 		// repeat as long as exit
 		// is not typed at client
-        System.out.print("Alice: ");
-		while (!(str = kb.readLine()).equals("exit")) {
+		
+        Thread sendMessage = new Thread(new Runnable() 
+        {
+            @Override
+            public void run() {
+                while (true && !exit) {
+  
+                    // read the message to deliver.
+                    String msg = keyboard.nextLine();
+                      
+                    try {
+                        // write on the output stream
+                        dos.writeBytes(msg+"\n");
 
-			// send to the server
-			dos.writeBytes(str + "\n");
+                        if (msg.equals("exit"))
+                        {
+                            exit = true;
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.println("You left the chat.");
+                System.exit(0);
+            }
+        });
+        // readMessage thread
+        Thread readMessage = new Thread(new Runnable() 
+        {
+            @Override
+            public void run() {
+  
+                while (true && !exit) {
+                    try {
+                        // read the message sent to this client
+                        String inMessage = br.readLine();
+                        if (inMessage.equals("exit"))
+                        {
+                            exit = true;
+                            s.close();
+                        }
+                        else
+                        {
+                        System.out.println(contactName+": "+inMessage);
+                        }
+                    } 
+                    catch (IOException e) {
+  
+                        e.printStackTrace();
+                    }
+                }
 
-			// receive from the server
-			str1 = br.readLine();
+                System.out.println("Bob left the chat.");   
+                System.exit(0);         }
+        });
 
-			System.out.println(contactName+": "+str1);
-            System.out.print("Alice: ");
-		}
-
-		// close connection.
-		dos.close();
-		br.close();
-		kb.close();
-		s.close();
-    } //try
-
-    catch (IOException e)
-    {
-        System.out.println("Error "+e.getMessage());
-
-    }
+		sendMessage.start();
+        readMessage.start();
 	}
 
     

@@ -6,10 +6,11 @@ import java.net.*;
 
 class Bob
 {
-    public static void main(String[] args)
+    static boolean exit = false;
+
+    public static void main(String[] args) throws IOException
     {   
-        try
-        { 
+        
         System.out.println("Bob has started his day.\nWaiting for Alice to call...");
         /* 
         Create Server Socket:
@@ -37,38 +38,78 @@ class Bob
 		// to read data from the keyboard
 		BufferedReader keyboardIn = new BufferedReader(new InputStreamReader(System.in));
 
-		// server executes continuously
-		while (true) 
-            {
+        Thread sendMessage = new Thread(new Runnable() 
+        {
+            String outMessage;
 
-                String inMessage, outMessage;
+            @Override
+            public void run() {
+                while (true && !exit) {
+  
+                    
+                      
+                    try {
+                        outMessage = keyboardIn.readLine();
 
-                // repeat as long as the client
-                // does not send a null string (can easily change this)
+                        // Send message to Alice
+                         sendStream.println(outMessage);
 
-                // Read message from Alice
-                while ((inMessage = receieveReader.readLine()) != null) {
-                    System.out.println(contactName+": "+inMessage);
-                    System.out.print("Bob: ");
-                    outMessage = keyboardIn.readLine();
+                         if (outMessage.equals("exit"))
+                         {
+                             exit = true;
+                         }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.println("You left the chat.");
+                System.exit(0);
+            }
+        });
 
-                    // Send message to Alice
-                    sendStream.println(outMessage);
+        // readMessage thread
+        Thread readMessage = new Thread(new Runnable() 
+        {
+            String inMessage;
+    
+            @Override
+            public void run() {
+                
+                while (true && !exit)  {
+                    try {
+                        // read the message sent to this client
+                        inMessage = receieveReader.readLine();
+                        if (inMessage.equals("exit"))
+                        {
+                            Alice.close();
+                            exit = true;
+                        }
+                        else
+                        {
+                        System.out.println(contactName+": "+inMessage);
+                        }
+                    } 
+                    catch (IOException e) {
+  
+                        e.printStackTrace();
+                    }
                 }
 
-                // close connection
-                sendStream.close();
-                receieveReader.close();
-                keyboardIn.close();
-                serverSocket.close();
-                Alice.close();
+                System.out.println("Alice left the chat.");
+                System.exit(0);
             }
-        } //try
+        });
+
+        readMessage.start();
+		sendMessage.start();
+
+        /* close connection
+        sendStream.close();
+        receieveReader.close();
+        keyboardIn.close();
+        serverSocket.close();
+        Alice.close();*/
         
-        catch(IOException e)
-        {
-            System.out.println("Error "+ e.getMessage());
-        }
     } 
 
 }
