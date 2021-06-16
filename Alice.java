@@ -7,12 +7,14 @@ import java.net.*;
 
 class Alice {
 
-	public static void main(String args[])
-		throws Exception
+	public static void main(String[] args)
 	{
-
+        try
+        {
+        System.out.println("Alice is out of bed.");
 		// Create client socket
 		Socket s = new Socket("localhost", 888);
+        String contactName = "Bob";
 
 		// to send data to the server
 		DataOutputStream dos
@@ -33,6 +35,7 @@ class Alice {
 
 		// repeat as long as exit
 		// is not typed at client
+        System.out.print("Alice: ");
 		while (!(str = kb.readLine()).equals("exit")) {
 
 			// send to the server
@@ -41,7 +44,8 @@ class Alice {
 			// receive from the server
 			str1 = br.readLine();
 
-			System.out.println(str1);
+			System.out.println(contactName+": "+str1);
+            System.out.print("Alice: ");
 		}
 
 		// close connection.
@@ -49,5 +53,14 @@ class Alice {
 		br.close();
 		kb.close();
 		s.close();
+    } //try
+
+    catch (IOException e)
+    {
+        System.out.println("Error "+e.getMessage());
+
+    }
 	}
+
+    
 }
