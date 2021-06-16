@@ -24,19 +24,21 @@ class Alice {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
-        Thread sendMessage = new Thread(new Runnable() {
-            String outMessage;
-
+        Thread sendMessage = new Thread(new Runnable() 
+        {
             @Override
             public void run() {
                 while (true && !exit) {
 
+                    // read the message to deliver.
+                    String msg = keyboard.nextLine();
+
                     try {
+                        // write on the output stream
+                        dos.writeBytes(msg+"\n");
 
-                        outMessage = keyboard.nextLine();
-                        dos.writeBytes(outMessage + "\n");
-
-                        if (outMessage.equals("exit")) {
+                        if (msg.equals("exit"))
+                        {
                             exit = true;
                         }
                     } catch (IOException e) {
@@ -48,32 +50,33 @@ class Alice {
             }
         });
         // readMessage thread
-        Thread readMessage = new Thread(new Runnable() {
-            String inMessage;
-
+        Thread readMessage = new Thread(new Runnable() 
+        {
             @Override
             public void run() {
 
                 while (true && !exit) {
                     try {
-
+                        // read the message sent to this client
                         String inMessage = br.readLine();
-
-                        if (inMessage.equals("exit") || !exit) {
+                        if (inMessage.equals("exit"))
+                        {
                             exit = true;
                             s.close();
-                        } else {
-                            System.out.println(contactName + ": " + inMessage);
                         }
-                    } catch (IOException e) {
+                        else
+                        {
+                        System.out.println(contactName+": "+inMessage);
+                        }
+                    } 
+                    catch (IOException e) {
 
                         e.printStackTrace();
                     }
                 }
 
-                System.out.println("Bob left the chat.");
-                System.exit(0);
-            }
+                System.out.println("Bob left the chat.");   
+                System.exit(0);         }
         });
 
         sendMessage.start();

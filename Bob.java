@@ -36,20 +36,26 @@ class Bob {
         // to read data from the keyboard
         BufferedReader keyboardIn = new BufferedReader(new InputStreamReader(System.in));
 
-        Thread sendMessage = new Thread(new Runnable() {
+        Thread sendMessage = new Thread(new Runnable() 
+        {
             String outMessage;
 
             @Override
             public void run() {
                 while (true && !exit) {
 
+
+
                     try {
                         outMessage = keyboardIn.readLine();
-                        sendStream.println(outMessage);
 
-                        if (outMessage.equals("exit")) {
-                            exit = true;
-                        }
+                        // Send message to Alice
+                         sendStream.println(outMessage);
+
+                         if (outMessage.equals("exit"))
+                         {
+                             exit = true;
+                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -58,26 +64,29 @@ class Bob {
                 System.exit(0);
             }
         });
-
         // readMessage thread
-        Thread readMessage = new Thread(new Runnable() {
+        Thread readMessage = new Thread(new Runnable() 
+        {
             String inMessage;
 
             @Override
             public void run() {
 
-                while (true && !exit) {
+                while (true && !exit)  {
                     try {
                         // read the message sent to this client
                         inMessage = receieveReader.readLine();
-                        if (inMessage.equals("exit")) {
-                            exit = true;
+                        if (inMessage.equals("exit"))
+                        {
                             Alice.close();
-                            serverSocket.close();
-                        } else {
-                            System.out.println(contactName + ": " + inMessage);
+                            exit = true;
                         }
-                    } catch (IOException e) {
+                        else
+                        {
+                        System.out.println(contactName+": "+inMessage);
+                        }
+                    } 
+                    catch (IOException e) {
 
                         e.printStackTrace();
                     }
