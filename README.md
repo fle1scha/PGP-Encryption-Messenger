@@ -6,3 +6,11 @@ If Bob successfully starts then you should see a confirmation, and Bob will wait
 Secondly, in a seperate terminal window, run: <br>
 `java Alice.java`<br>
 If Alice successfully starts then you should see a confirmation, and you will be prompted for input.
+
+## Test Cases
+I don't know how to run tests on this.
+1. Alice sends multiple inputs in a row. PASS
+2. Bob sends multiple inputs in a row. PASS
+3. Alice sends inputs then exits. PASS
+4. Bob sends inputs then exits. PASS
+5. Chat in between Alice and Bob. PASS

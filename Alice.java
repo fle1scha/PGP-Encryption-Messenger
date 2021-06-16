@@ -59,15 +59,19 @@ class Alice {
                     try {
                         // read the message sent to this client
                         String inMessage = br.readLine();
-                        if (inMessage.equals("exit"))
+                        if (!exit)
                         {
-                            exit = true;
-                            s.close();
+                            if (inMessage.equals("exit"))
+                            {
+                                exit = true;
+                                s.close();
+                            }
+                            else
+                            {
+                                System.out.println(contactName+": "+inMessage);
+                            }
                         }
-                        else
-                        {
-                        System.out.println(contactName+": "+inMessage);
-                        }
+                        
                     } 
                     catch (IOException e) {
 
