@@ -8,7 +8,7 @@ Secondly, in a seperate terminal window, run: <br>
 If Alice successfully starts then you should see a confirmation, and you will be prompted for input.
 
 ## Run Program
-<br> `java -cp bcprov-ext-jdk15on-169.jar Bob.java` <br>
+`java -cp bcprov-ext-jdk15on-169.jar Bob.java`
 
 
 ## Test Cases
