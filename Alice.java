@@ -24,6 +24,7 @@ class Alice {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
+        
         Thread sendMessage = new Thread(new Runnable() 
         {
             @Override
@@ -40,12 +41,13 @@ class Alice {
                         if (msg.equals("exit"))
                         {
                             exit = true;
+                            System.out.println("You left the chat.");
+
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-                System.out.println("You left the chat.");
                 System.exit(0);
             }
         });
@@ -63,8 +65,10 @@ class Alice {
                         {
                             if (inMessage.equals("exit"))
                             {
-                                exit = true;
                                 s.close();
+                                exit = true;
+                                System.out.println("Bob left the chat.");
+                                
                             }
                             else
                             {
@@ -79,7 +83,7 @@ class Alice {
                     }
                 }
 
-                System.out.println("Bob left the chat.");   
+                   
                 System.exit(0);         }
         });
 

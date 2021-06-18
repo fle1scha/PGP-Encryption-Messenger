@@ -55,12 +55,13 @@ class Bob {
                          if (outMessage.equals("exit"))
                          {
                              exit = true;
+                             System.out.println("You left the chat.");
                          }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-                System.out.println("You left the chat.");
+                
                 System.exit(0);
             }
         });
@@ -76,6 +77,8 @@ class Bob {
                     try {
                         // read the message sent to this client
                         inMessage = receieveReader.readLine();
+                        if (!exit)
+                        {
                         if (inMessage.equals("exit"))
                         {
                             Alice.close();
@@ -85,6 +88,7 @@ class Bob {
                         {
                         System.out.println(contactName+": "+inMessage);
                         }
+                    }
                     } 
                     catch (IOException e) {
 
@@ -92,7 +96,7 @@ class Bob {
                     }
                 }
 
-                System.out.println("Alice left the chat.");
+                
                 System.exit(0);
             }
         });
