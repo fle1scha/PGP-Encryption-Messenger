@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "bcprov-ext-jdk15on-169.jar"
+    ]
+}

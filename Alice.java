@@ -4,11 +4,14 @@
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
+import java.security.*;
+import javax.crypto.*;
 
 class Alice {
     static boolean exit = false;
 
     public static void main(String[] args) throws IOException {
+        Security.setProperty("crypto.policy", "unlimited");
 
         System.out.println("Alice is out of bed.");
         // Create client socket

@@ -3,11 +3,22 @@
 
 import java.io.*;
 import java.net.*;
+import java.security.*;
+import javax.crypto.*;
 
 class Bob {
     static boolean exit = false;
 
     public static void main(String[] args) throws IOException {
+        
+        Security.setProperty("crypto.policy", "unlimited");
+        // Just testing whether the configuration works properly, should print
+        // 2147483647
+        try {
+            int maxKeySize = javax.crypto.Cipher.getMaxAllowedKeyLength("AES");
+            System.out.println("Max Key Size for AES : " + maxKeySize);
+        } catch (Exception e) {
+        }
 
         System.out.println("Bob has started his day.\nWaiting for Alice to call...");
         /*
@@ -36,67 +47,56 @@ class Bob {
         // to read data from the keyboard
         BufferedReader keyboardIn = new BufferedReader(new InputStreamReader(System.in));
 
-        Thread sendMessage = new Thread(new Runnable() 
-        {
+        Thread sendMessage = new Thread(new Runnable() {
             String outMessage;
 
             @Override
             public void run() {
                 while (true && !exit) {
 
-
-
                     try {
                         outMessage = keyboardIn.readLine();
 
                         // Send message to Alice
-                         sendStream.println(outMessage);
+                        sendStream.println(outMessage);
 
-                         if (outMessage.equals("exit"))
-                         {
-                             exit = true;
-                             System.out.println("You left the chat.");
-                         }
+                        if (outMessage.equals("exit")) {
+                            exit = true;
+                            System.out.println("You left the chat.");
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-                
+
                 System.exit(0);
             }
         });
         // readMessage thread
-        Thread readMessage = new Thread(new Runnable() 
-        {
+        Thread readMessage = new Thread(new Runnable() {
             String inMessage;
 
             @Override
             public void run() {
 
-                while (true && !exit)  {
+                while (true && !exit) {
                     try {
                         // read the message sent to this client
                         inMessage = receieveReader.readLine();
-                        if (!exit)
-                        {
-                        if (inMessage.equals("exit"))
-                        {
-                            Alice.close();
-                            exit = true;
+                        if (!exit) {
+                            if (inMessage.equals("exit")) {
+                                Alice.close();
+                                exit = true;
+                            } else {
+                                System.out.println(contactName + ": " + inMessage);
+                            }
                         }
-                        else
-                        {
-                        System.out.println(contactName+": "+inMessage);
-                        }
-                    }
-                    } 
-                    catch (IOException e) {
+                    } catch (IOException e) {
 
                         e.printStackTrace();
                     }
                 }
 
-                
                 System.exit(0);
             }
         });
