@@ -83,6 +83,7 @@ class Bob {
                         {
                             Alice.close();
                             exit = true;
+                            System.out.println("Alice left the chat.");
                         }
                         else
                         {
