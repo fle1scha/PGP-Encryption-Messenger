@@ -2,10 +2,14 @@
 In the EncryptionApp directory, first run: <br>
 `java Bob.java` <br>
 If Bob successfully starts then you should see a confirmation, and Bob will wait for a connection from Alice.
+In order to end the chat, type: exit
+This will terminate the connection with Alice
 
 Secondly, in a seperate terminal window, run: <br>
 `java Alice.java`<br>
 If Alice successfully starts then you should see a confirmation, and you will be prompted for input.
+In order to end the chat, type: exit
+This will terminate the connection with Bob
 
 ## Run Program
 `java -cp bcprov-ext-jdk15on-169.jar Bob.java`
