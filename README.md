@@ -7,6 +7,10 @@ Secondly, in a seperate terminal window, run: <br>
 `java Alice.java`<br>
 If Alice successfully starts then you should see a confirmation, and you will be prompted for input.
 
+## Run Program
+java -cp bcprov-ext-jdk15on-169.jar Bob.java 
+
+
 ## Test Cases
 I don't know how to run tests on this.
 1. Alice sends multiple inputs in a row. PASS
