@@ -22,3 +22,8 @@ I don't know how to run tests on this.
 3. Alice sends inputs then exits. PASS
 4. Bob sends inputs then exits. PASS
 5. Chat in between Alice and Bob. PASS
+
+## Using Java Security
+https://www.tutorialspoint.com/java_cryptography/java_cryptography_quick_guide.htm
+I implemented a signature, certificate, public and private key as an example in a simple application
+The next step is to now try and implement that into our chat app
