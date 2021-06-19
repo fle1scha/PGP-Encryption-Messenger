@@ -4,16 +4,24 @@
 import java.io.*;
 import java.net.*;
 import java.security.*;
+import java.security.spec.RSAPrivateKeySpec;
 import javax.crypto.*;
+import java.math.BigInteger;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 class Bob {
     static boolean exit = false;
+    static String IV = "placeholder";
+    int i;
+    private Cipher keyDecipher;
+    SecretKey AESKey;
+    private Cipher ServerDecryptCipher;
+	private Cipher ServerEncryptCipher;
 
     public static void main(String[] args) throws IOException {
-        
-        Security.setProperty("crypto.policy", "unlimited");
-        // Just testing whether the configuration works properly, should print
-        // 2147483647
+        // Just testing whether the configuration works properly
+        Security.setProperty("crypto.policy", "unlimited");        
         try {
             int maxKeySize = javax.crypto.Cipher.getMaxAllowedKeyLength("AES");
             System.out.println("Max Key Size for AES : " + maxKeySize);
@@ -83,21 +91,15 @@ class Bob {
                     try {
                         // read the message sent to this client
                         inMessage = receieveReader.readLine();
-                        if (!exit)
-                        {
-                        if (inMessage.equals("exit"))
-                        {
-                            Alice.close();
-                            exit = true;
-                            System.out.println("Alice left the chat.");
+                        if (!exit) {
+                            if (inMessage.equals("exit")) {
+                                Alice.close();
+                                exit = true;
+                            } else {
+                                System.out.println(contactName + ": " + inMessage);
+                            }
                         }
-                        else
-                        {
-                        System.out.println(contactName+": "+inMessage);
-                        }
-                    } 
-                }
-                    catch (IOException e) {
+                    } catch (IOException e) {
 
                         e.printStackTrace();
                     }
@@ -117,4 +119,76 @@ class Bob {
 
     }
 
-}
+    private void decryptAESKey(byte[] encryptedKey) {
+	        SecretKey key = null; PrivateKey privKey = null; keyDecipher = null;
+	        try
+	        {
+	            privKey = readPrivateKeyFromFile("private.key"); 			//  private key
+	            keyDecipher = Cipher.getInstance("RSA/ECB/PKCS1Padding"); 		// initialize the cipher...
+	            keyDecipher.init(Cipher.DECRYPT_MODE, privKey );
+	            key = new SecretKeySpec (keyDecipher.doFinal(encryptedKey), "AES");
+	            System.out.println();
+	            System.out.println(" AES key after decryption : " + key);
+	            i = 1;
+	            AESKey =  key;
+	        }
+	        catch(Exception e)
+	         {  e.printStackTrace(); 
+	        	System.out.println ( "exception decrypting the aes key: "  + e.getMessage() );
+	             }
+	       
+	    }
+
+        private void decryptMessage(byte[] encryptedMessage) {
+	        ServerDecryptCipher = null;
+	        try
+	        {
+	            ServerDecryptCipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+	            ServerDecryptCipher.init(Cipher.DECRYPT_MODE, AESKey, new IvParameterSpec(IV.getBytes()));
+	             byte[] msg = ServerDecryptCipher.doFinal(encryptedMessage);		            
+	             System.out.println("Server: INCOMING Message From CLIENT >> " + new String(msg));
+	             System.out.println("Sever: Enter OUTGOING  message : > ");
+	        }
+	        
+	        catch(Exception e)
+	         {
+	        	e.getCause();
+	        	e.printStackTrace();
+	        	System.out.println ( "Exception genereated in decryptData method. Exception Name  :"  + e.getMessage() );
+	            }
+	    }
+
+        private byte[] encryptMessage(String s)
+                throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+                InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+            ServerEncryptCipher = null;
+            byte[] cipherText = null;
+            ServerEncryptCipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            ServerEncryptCipher.init(Cipher.ENCRYPT_MODE, AESKey, new IvParameterSpec(IV.getBytes()));
+            cipherText = ServerEncryptCipher.doFinal(s.getBytes());
+
+            return cipherText;
+        }
+
+        PrivateKey readPrivateKeyFromFile(String fileName) throws IOException {
+			
+			 FileInputStream in = new FileInputStream(fileName);
+		  	ObjectInputStream readObj =  new ObjectInputStream(new BufferedInputStream(in));
+
+		  	try {
+		  	  BigInteger m = (BigInteger) readObj.readObject();
+		  	  BigInteger d = (BigInteger) readObj.readObject();
+		  	  RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(m, d);
+		  	  KeyFactory fact = KeyFactory.getInstance("RSA");
+		  	  PrivateKey priKey = fact.generatePrivate(keySpec);
+		  	  return priKey;
+		  	} catch (Exception e) {
+		  		  throw new RuntimeException("Some error in reading private key", e);
+		  	} finally {
+		 	   readObj.close();
+		 	 }
+			}
+
+    }
+
+
