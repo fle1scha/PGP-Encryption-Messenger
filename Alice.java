@@ -9,6 +9,8 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 
+import jdk.vm.ci.meta.PlatformKind.Key;
+
 
 class Alice {
 
@@ -69,41 +71,63 @@ class Alice {
     static boolean exit = false;
     static SecretKey sk;
     static byte [] IV;
-    public static void main(String[] args) throws IOException {
 
-        // Generating Secret Key
+
+
+
+    // BEGIN ALICE MAIN 
+    // ================================================================================================================
+
+
+    public static void main(String[] args) throws IOException, GeneralSecurityException {
+
+        // SETUP 
         // ========================================================
-            
-        try {
+        Security.setProperty("crypto.policy", "unlimited");
+        System.out.println("Alice is out of bed.");
+        // Create client socket
+        Socket s = new Socket("localhost", 888);
+        String contactName = "Bob";
+        // to send data to the server
+        DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+        // to read data coming from the server
+        DataInputStream dis = new DataInputStream(s.getInputStream());
+        // to read data from the keyboard
+        Scanner keyboard = new Scanner(System.in);
+        // ========================================================
+
+
+        // Generating PUBLIC AND PRIVATE KEY (RSA - ASSYMETRIC)
+        // ========================================================
+                RSA rsa = new RSA();
+                rsa.createRSA();
+        // ========================================================
+
+
+
+        // Generating Session Key (AES - SYMMETRIC)
+        // ========================================================
+        try 
+        {
             sk = generateSecretAESKey();
             System.out.println(" -- Secret key generated ...");
             System.out.println(" -- Converting secret key ...");
             String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
             System.out.println(" -- Secret Key: " + encodedKey);
             IV = createInitializationVector();
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
+        } 
+            catch (Exception e1) {e1.printStackTrace();}
+        // ========================================================
 
+
+        // Execute Key Exchanges ...
+        // ========================================================
+            
         // ========================================================
 
 
 
-        Security.setProperty("crypto.policy", "unlimited");
 
-        System.out.println("Alice is out of bed.");
-        // Create client socket
-        Socket s = new Socket("localhost", 888);
-        String contactName = "Bob";
-
-        // to send data to the server
-        DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-
-        // to read data coming from the server
-        DataInputStream dis = new DataInputStream(s.getInputStream());
-
-        // to read data from the keyboard
-        Scanner keyboard = new Scanner(System.in);
 
 
 
