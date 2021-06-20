@@ -59,22 +59,19 @@ class Bob {
     }
 
     class listenAlice extends Thread {
-
+        String inMessage;
         public void run() {
-
-            while (true) {
+            while (!exit) {
                 try {
-                    m = (message) inputStream.readObject();
+                    inMessage = inputStream.readLine();
 
-                } catch (ClassNotFoundException e) {
-                    System.out.println("Class not found while reading the message object");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
                 if (i == 0) {
-                    if (m.getData() != null) {
-                        decryptAESKey(m.getData());
+                    if (inMessage != null) {
+                        decryptAESKey(inMessage.getBytes());
                         System.out.println();
                         i++;
                     } else {
@@ -82,8 +79,8 @@ class Bob {
                         System.exit(1);
                     }
                 } else {
-                    if (m.getData() != null) {
-                        decryptMessage(m.getData());
+                    if (inMessage != null) {
+                        decryptMessage(inMessage.getBytes());
                     }
                 }
             }
@@ -91,22 +88,17 @@ class Bob {
     }
 
     class sendAlice extends Thread {
+        String outMessage;
         public void run() {
             while (true) {
                 try {
-                    Scanner sc = new Scanner(System.in);
-                    String s = sc.nextLine();
-                    messageToSend = null;
-                    messageToSend = new message(encryptMessage(s));
-                    // System.out.println("new message: " + toSend);
-
-                    // sOutput.writeObject(toSend);
+                    Scanner keyboardIn = new Scanner(System.in);
+                    outputStream.writeBytes(encryptMessage(outMessage) + "\n");
                     write();
                 }
 
                 catch (Exception e) {
                     e.printStackTrace();
-                    System.out.println("No message sent to server");
                     break;
                 }
             }

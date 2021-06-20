@@ -1,105 +1,153 @@
-// NIS 2021
-// Alice (Client) class that sends and receives data
-
 import java.io.*;
-import java.net.*;
-import java.util.Scanner;
+import java.math.BigInteger;
+import java.net.Socket;
 import java.security.*;
+import java.security.spec.RSAPublicKeySpec;
+import java.util.Scanner;
+
+//import java.math.BigInteger;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.math.BigInteger;
 
-class Alice {
+public class Alice {
+
     static boolean exit = false;
+
+    private ObjectOutputStream sOutput;
+    private ObjectInputStream sInput;
+
+    private Socket socket;
+    private String server;
+    private int port;
     private Cipher cipher1;
     private Cipher cipher2;
     int i = 0;
-    static String IV = "placeholder";
+    message m;
     SecretKey AESkey;
+    message toSend;
+    static String IV = "AAAAAAAAAAAAAAAA";
 
-    public static void main(String[] args) throws IOException {
-        Security.setProperty("crypto.policy", "unlimited");
+    Scanner keyboard = new Scanner(System.in);
 
-        System.out.println("Alice is out of bed.");
-        // Create client socket
-        Socket s = new Socket("localhost", 888);
-        String contactName = "Bob";
+    // ===== THE CONSTRUCTOR ==========
 
-        // to send data to the server
-        DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-
-        // to read data coming from the server
-        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-
-        // to read data from the keyboard
-        Scanner keyboard = new Scanner(System.in);
-        
-        Thread sendMessage = new Thread(new Runnable() 
-        {
-            @Override
-            public void run() {
-                while (true && !exit) {
-
-                    // read the message to deliver.
-                    String msg = keyboard.nextLine();
-
-                    try {
-                        // write on the output stream
-                        dos.writeBytes(msg+"\n");
-
-                        if (msg.equals("exit"))
-                        {
-                            exit = true;
-                            System.out.println("You left the chat.");
-
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                System.exit(0);
-            }
-        });
-        // readMessage thread
-        Thread readMessage = new Thread(new Runnable() 
-        {
-            @Override
-            public void run() {
-
-                while (true && !exit) {
-                    try {
-                        // read the message sent to this client
-                        String inMessage = br.readLine();
-                        if (!exit)
-                        {
-                            if (inMessage.equals("exit"))
-                            {
-                                s.close();
-                                exit = true;
-                                System.out.println("Bob left the chat.");
-                                
-                            }
-                            else
-                            {
-                                System.out.println(contactName+": "+inMessage);
-                            }
-                        }
-                        
-                    } 
-                    catch (IOException e) {
-
-                        e.printStackTrace();
-                    }
-                }
-
-                   
-                System.exit(0);         }
-        });
-
-        sendMessage.start();
-        readMessage.start();
+    Alice(String server, int port) {
+        this.server = server;
+        this.port = port;
     }
+
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+
+        String serverAddress;
+
+        int portNumber = 8002;
+        if (args.length < 1) {
+            serverAddress = "localhost";
+        } else {
+            serverAddress = args[0];
+        }
+        Alice client = new Alice(serverAddress, portNumber);
+        client.generateAESkey();
+        client.start();
+    }
+
+    /*
+     * the start method. establishes a socket connection with the server.
+     * 
+     * 
+     */
+
+    void start() throws IOException {
+        socket = new Socket(server, port);
+        System.out.println("connection accepted " + socket.getInetAddress() + " :" + socket.getPort());
+
+        sInput = new ObjectInputStream(socket.getInputStream());
+        sOutput = new ObjectOutputStream(socket.getOutputStream());
+
+        new sendToServer().start();
+        new listenFromServer().start();
+    }
+
+    /*
+     * 
+     * listenFromServer method. Will receive the message from server and call the
+     * decryption method.
+     * 
+     * 
+     */
+
+    class listenFromServer extends Thread {
+        public void run() {
+            while (!exit) {
+                // read the message to deliver.
+                String msg = keyboard.nextLine();
+                try {
+                    msg = sInput.readLine();
+                    decryptMessage(msg.getBytes());
+                    if (msg.equals("exit")) {
+                        socket.close();
+                        exit = true;
+                        System.out.println("Bob left the chat.");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /*
+     * sendToServer Class. Extends the thread class. Runs continuously.
+     * 
+     * Will send encrypted messages to the server. The first message sent to server
+     * will be encrypted AES key. The same key will be used by server to decrypt the
+     * future messages.
+     * 
+     * Once the AES key is shared, the client Will accept console inputs and encrypt
+     * it before sending to server.
+     * 
+     * 
+     */
+
+    class sendToServer extends Thread {
+        public void run() {
+            while (!exit) {
+                // read the message to deliver.
+                String msg = keyboard.nextLine();
+
+                try {
+                    if (i == 0) {
+                        
+                        sOutput.writeObject(encryptAESKey().msg.getBytes()));
+                        i = 1;
+                    }
+
+                    else {
+
+                        System.out.println("CLIENT: Enter OUTGOING message > ");
+                        Scanner sc = new Scanner(System.in);
+                        String s = sc.nextLine();
+                        toSend = new message(encryptMessage(s));
+                        sOutput.writeObject(toSend);
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.println("No message sent to server");
+                    break;
+                }
+            }
+        }
+    }
+
+    /*
+     * //============== Create AES Key =================================
+     * 
+     * generateAESkey method
+     * 
+     * Called by main method, generates the AES key for encryption / decryption of
+     * the messages exchanged between client and server.
+     */
 
     void generateAESkey() throws NoSuchAlgorithmException {
         AESkey = null;
@@ -108,6 +156,23 @@ class Alice {
         AESkey = Gen.generateKey();
         System.out.println("Genereated the AES key : " + AESkey);
     }
+
+    /*
+     * // ====== Read RSA Public key to Encrypt the AES key ==================
+     * 
+     * encryptAESKey method.
+     * 
+     * Will encrypt the AES key generated by generateAESkey method. It will also
+     * calculate the time taken for encrypting the AES key using RSA encryption
+     * method.
+     * 
+     * To encrypt the AES key, this method will read RSA public key from the RSA
+     * public = private key pairs saved in the same directory.
+     * 
+     * Dependency: the public key file "public.key" should be saved in the same
+     * directory. (Performed by server.java class)
+     * 
+     */
 
     private byte[] encryptAESKey() {
         cipher1 = null;
@@ -134,6 +199,45 @@ class Alice {
         return key;
     }
 
+    /*
+     * //============= Encrypt Data to send =================
+     * 
+     * encryptMessage method Encrypts the string input using AES encryption with AES
+     * key generated by generateAESkey method.
+     * 
+     * @param String s Input string to encrypt
+     * 
+     * Returns byte array as output.
+     * 
+     */
+
+    private byte[] encryptMessage(String s) throws NoSuchAlgorithmException, NoSuchPaddingException,
+            InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+        cipher2 = null;
+        byte[] cipherText = null;
+        cipher2 = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+
+        cipher2.init(Cipher.ENCRYPT_MODE, AESkey, new IvParameterSpec(IV.getBytes()));
+        long time3 = System.nanoTime();
+        cipherText = cipher2.doFinal(s.getBytes());
+        long time4 = System.nanoTime();
+        long totalAES = time4 - time3;
+        System.out.println("Time taken by AES Encryption (Nano Seconds) " + totalAES);
+        return cipherText;
+    }
+
+    /*
+     * //=========== Decipher the received message with AES key =================
+     * 
+     * decryptMessage method, will decrypt the cipher text received from server.
+     * Currently disabled, can be enabled for two way communication.
+     * 
+     * @param byte[] data takes the byte array of encrypted message as input.
+     * Returns plain text.
+     * 
+     * 
+     */
+
     private void decryptMessage(byte[] encryptedMessage) {
         cipher2 = null;
         try {
@@ -150,21 +254,36 @@ class Alice {
             System.out.println("Exception genereated in decryptData method. Exception Name  :" + e.getMessage());
         }
     }
-    
-    private byte[] encryptMessage(String s) throws NoSuchAlgorithmException, NoSuchPaddingException,
-            InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-        cipher2 = null;
-        byte[] cipherText = null;
-        cipher2 = Cipher.getInstance("AES/CBC/PKCS5PADDING");
 
-        cipher2.init(Cipher.ENCRYPT_MODE, AESkey, new IvParameterSpec(IV.getBytes()));
-        long time3 = System.nanoTime();
-        cipherText = cipher2.doFinal(s.getBytes());
-        long time4 = System.nanoTime();
-        long totalAES = time4 - time3;
-        System.out.println("Time taken by AES Encryption (Nano Seconds) " + totalAES);
-        return cipherText;
+    /*
+     * closeSocket method //============== To close all the sockets and
+     * streams.=================== Closes the input/output streams and sockets.
+     * 
+     * 
+     */
+
+    public void closeSocket() {
+        try {
+            if (sInput != null)
+                sInput.close();
+            if (sOutput != null)
+                sOutput.close();
+            if (socket != null)
+                socket.close();
+        } catch (IOException ioe) {
+            System.out.println("Error in Disconnect methd");
+        }
     }
+
+    /*
+     * // ===================== Reading RSA public key from file ===============
+     * 
+     * readPublicKeyFromFile method.
+     * 
+     * Will read the RSA public key from the file "public.key" on the same directory
+     * to encrypt the AES key.
+     * 
+     */
 
     PublicKey readPublicKeyFromFile(String fileName) throws IOException {
 
@@ -185,5 +304,4 @@ class Alice {
             oin.close();
         }
     }
-
 }
