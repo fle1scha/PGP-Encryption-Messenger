@@ -6,6 +6,8 @@ import java.net.*;
 import java.security.*;
 import java.util.Scanner;
 import javax.crypto.*;
+import java.security.spec.RSAPrivateKeySpec;
+import java.math.BigInteger;
 
 class Bob {
     static boolean exit = false;
@@ -139,6 +141,34 @@ class Bob {
          * keyboardIn.close(); serverSocket.close(); Alice.close();
          */
 
+    }
+
+    /*
+     * // ================= Read private Key from the file=======================
+     * 
+     * readPrivateKeyFromFile method reads the RSA private key from private.key file
+     * saved in same directory. the private key is used to decrypt/decipher the AES
+     * key sent by Client.
+     * 
+     * 
+     * 
+     */
+
+     PrivateKey readPrivateKey(String fileName) throws IOException {
+        FileInputStream in = new FileInputStream(fileName);
+        ObjectInputStream readObj = new ObjectInputStream(new BufferedInputStream(in));
+        try {
+            BigInteger m = (BigInteger) readObj.readObject();
+            BigInteger d = (BigInteger) readObj.readObject();
+            RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(m, d);
+            KeyFactory fact = KeyFactory.getInstance("RSA");
+            PrivateKey privateKey = fact.generatePrivate(keySpec);
+            return privateKey;
+        } catch (Exception e) {
+            throw new RuntimeException("Some error in reading private key", e);
+        } finally {
+            readObj.close();
+        }
     }
 
 }

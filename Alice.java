@@ -2,9 +2,12 @@
 // Alice (Client) class that sends and receives data
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.*;
 import java.util.Scanner;
 import java.security.*;
+import java.security.spec.RSAPublicKeySpec;
+
 import javax.crypto.*;
 
 class Alice {
@@ -129,6 +132,35 @@ class Alice {
 
         sendMessage.start();
         readMessage.start();
+    }
+
+    /*
+     * // ===================== Reading RSA public key from file ===============
+     * 
+     * readPublicKeyFromFile method.
+     * 
+     * Will read the RSA public key from the file "public.key" on the same directory
+     * to encrypt the AES key.
+     * 
+     */
+
+    PublicKey readPublicKeyFromFile(String fileName) throws IOException {
+
+        FileInputStream fileInput = new FileInputStream(fileName);
+        ObjectInputStream objectInputStream = new ObjectInputStream(new BufferedInputStream(fileInput));
+
+        try {
+            BigInteger m = (BigInteger) objectInputStream.readObject();
+            BigInteger e = (BigInteger) objectInputStream.readObject();
+            RSAPublicKeySpec keySpecifications = new RSAPublicKeySpec(m, e);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpecifications);
+            return publicKey;
+        } catch (Exception e) {
+            throw new RuntimeException("Some error in reading public key", e);
+        } finally {
+            objectInputStream.close();
+        }
     }
 
 }
