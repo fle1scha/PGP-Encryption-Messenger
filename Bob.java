@@ -10,16 +10,24 @@ import javax.crypto.*;
 class Bob {
     static boolean exit = false;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, GeneralSecurityException {
+        /*
+        *This will instantiate the RSA object to create both public and private keys
+        *They will be saved as private.key and public.key 
+        */
+        RSA rsa = new RSA();
+        rsa.createRSA();
         
+        /*
         Security.setProperty("crypto.policy", "unlimited");
-        // Just testing whether the configuration works properly, should print
-        // 2147483647
+        Just testing whether the configuration works properly, should print
+        2147483647
         try {
             int maxKeySize = javax.crypto.Cipher.getMaxAllowedKeyLength("AES");
             System.out.println("Max Key Size for AES : " + maxKeySize);
         } catch (Exception e) {
         }
+        */
 
         System.out.println("Bob has started his day.\nWaiting for Alice to call...");
         /*
