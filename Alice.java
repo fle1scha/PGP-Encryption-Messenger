@@ -22,17 +22,18 @@ class Alice {
         DataOutputStream dos = new DataOutputStream(s.getOutputStream());
 
         // to read data coming from the server
-        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        DataInputStream dis = new DataInputStream(s.getInputStream());
 
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
+
 
         
         Thread sendMessage = new Thread(new Runnable() 
         {
             @Override
             public void run() {
-                while (true && !exit) {
+                while (!exit) {
 
                     // read the message to deliver.
                     String msg = keyboard.nextLine();
@@ -60,10 +61,10 @@ class Alice {
             @Override
             public void run() {
 
-                while (true && !exit) {
+                while (!exit) {
                     try {
                         // read the message sent to this client
-                        String inMessage = br.readLine();
+                        String inMessage = dis.readLine();
                         if (!exit)
                         {
                             if (inMessage.equals("exit"))
@@ -72,6 +73,42 @@ class Alice {
                                 exit = true;
                                 System.out.println("Bob left the chat.");
                                 
+                            }
+                            else if (inMessage.equals("!F")) {
+                                int bytesRead;
+                                int current = 0;
+                                //read File
+                                int FILE_SIZE = 6023380;
+                                String FILE_TO_RECEIVE = "C:\\NISTestGet\\CaptureR.PNG";
+
+                                byte [] mybytearray  = new byte [FILE_SIZE];
+                                InputStream is = s.getInputStream();
+                                FileOutputStream fos = new FileOutputStream(FILE_TO_RECEIVE);
+                                BufferedOutputStream bos = new BufferedOutputStream(fos);
+
+                                bytesRead = is.read(mybytearray,0,mybytearray.length);
+                                current = bytesRead;
+
+                                System.out.println("About to read");
+
+//                                do {
+//                                    int counter = 0;
+//                                    System.out.println("Loop count " + counter + ", bytesread " + bytesRead + ", current " + current);
+//                                    bytesRead =
+//                                            is.read(mybytearray, current, (mybytearray.length-current));
+//                                    if(bytesRead >= 0) current += bytesRead;
+//
+//                                    counter ++;
+//                                } while(bytesRead > -1);
+
+                                System.out.println("About to write");
+
+                                bos.write(mybytearray, 0 , current);
+                                System.out.println("About to flush");
+                                bos.flush();
+                                System.out.println("File " + FILE_TO_RECEIVE
+                                        + " downloaded (" + current + " bytes read)");
+
                             }
                             else
                             {

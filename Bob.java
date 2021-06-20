@@ -4,6 +4,7 @@
 import java.io.*;
 import java.net.*;
 import java.security.*;
+import java.util.Scanner;
 import javax.crypto.*;
 
 class Bob {
@@ -39,31 +40,46 @@ class Bob {
         System.out.println("Connection established at " + Alice);
 
         // to send data to the client
-        PrintStream sendStream = new PrintStream(Alice.getOutputStream());
+        DataOutputStream sendStream = new DataOutputStream(Alice.getOutputStream());
 
         // to read data coming from the client
-        BufferedReader receieveReader = new BufferedReader(new InputStreamReader(Alice.getInputStream()));
+        DataInputStream dis = new DataInputStream((Alice.getInputStream()));
 
         // to read data from the keyboard
-        BufferedReader keyboardIn = new BufferedReader(new InputStreamReader(System.in));
+        Scanner keyboardIn = new Scanner(System.in);
 
         Thread sendMessage = new Thread(new Runnable() {
             String outMessage;
 
             @Override
             public void run() {
-                while (true && !exit) {
+                while (!exit) {
 
                     try {
-                        outMessage = keyboardIn.readLine();
-
+                        outMessage = keyboardIn.nextLine();
                         // Send message to Alice
-                        sendStream.println(outMessage);
+                        sendStream.writeBytes(outMessage + "\n");
 
                         if (outMessage.equals("exit")) {
                             exit = true;
                             System.out.println("You left the chat.");
                         }
+
+                        else if (outMessage.equals("!F")) {
+                            String FILE_TO_SEND = "C:\\NISTestSend\\Capture.PNG";
+                            //send File
+                            File myFile = new File (FILE_TO_SEND);
+                            byte [] mybytearray  = new byte [(int)myFile.length()];
+                            FileInputStream fis = new FileInputStream(myFile);
+                            BufferedInputStream bis = new BufferedInputStream(fis);
+                            bis.read(mybytearray,0,mybytearray.length);
+                            OutputStream os = Alice.getOutputStream();
+                            System.out.println("Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
+                            os.write(mybytearray,0,mybytearray.length);
+                            os.flush();
+                            System.out.println("Done.");
+                        }
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -79,10 +95,10 @@ class Bob {
             @Override
             public void run() {
 
-                while (true && !exit) {
+                while (!exit) {
                     try {
                         // read the message sent to this client
-                        inMessage = receieveReader.readLine();
+                        inMessage = dis.readLine();
                         if (!exit)
                         {
                         if (inMessage.equals("exit"))
@@ -111,7 +127,7 @@ class Bob {
         sendMessage.start();
 
         /*
-         * close connection sendStream.close(); receieveReader.close();
+         * close connection sendStream.close(); dis.close();
          * keyboardIn.close(); serverSocket.close(); Alice.close();
          */
 
