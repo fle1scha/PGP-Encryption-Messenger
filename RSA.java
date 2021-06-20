@@ -30,8 +30,9 @@ public class RSA {
         // Generating the pair of keys
         KeyPair pair = keyPairGen.generateKeyPair();
         pub = pair.getPublic();
-        System.out.println(pub);
+        System.out.println("\n -- PUBLIC_KEY: \n" + pub + "\n");
         priv = pair.getPrivate();
+        System.out.println(" -- PRIVATE_KEY: \n" + priv + "\n");
 
         /*KeyFactory fact = KeyFactory.getInstance("RSA");
         RSAPublicKeySpec publicKeySpec = fact.getKeySpec(pair.getPublic(), RSAPublicKeySpec.class);
@@ -42,22 +43,25 @@ public class RSA {
         saveKey("privateEncryption.key", privateKeySpec.getModulus(), privateKeySpec.getPrivateExponent()); // this will give private key file*/
 
 
-        String secretMessage = "Secret shhh";
+        String secretMessage = "Shhhh - Don't tell anyone the secret message!";
 
         Cipher encryptCipher = Cipher.getInstance("RSA");
         encryptCipher.init(Cipher.ENCRYPT_MODE, pub);
 
+
+        // Encrypting a message
         byte[] secretMessageBytes = secretMessage.getBytes(StandardCharsets.UTF_8);
         byte[] encryptedMessageBytes = encryptCipher.doFinal(secretMessageBytes);
 
         Cipher decryptCipher = Cipher.getInstance("RSA");
         decryptCipher.init(Cipher.DECRYPT_MODE, priv);
 
+        // Decrypting a message
         byte[] decryptedMessageBytes = decryptCipher.doFinal(encryptedMessageBytes);
         String decryptedMessage = new String(decryptedMessageBytes, StandardCharsets.UTF_8);
 
-        System.out.println("E: "+secretMessage);
-        System.out.println("D: "+decryptedMessage);
+        System.out.println("Encrypted message: "+ encryptedMessageBytes);
+        System.out.println("Decrypted message: "+ decryptedMessage);
 
     }
 
