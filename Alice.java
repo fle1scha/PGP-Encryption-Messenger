@@ -125,15 +125,16 @@ class Alice {
                         // write on the output stream
                         try {
                             message = executeAESEncryption(msg, sk, IV);
-                            System.out.println("Original Message: " + msg);
+                            //System.out.println("Original Message: " + msg);
                             System.out.println("Encrypted Message: " + message);
-                            System.out.println(executeAESDecryption(message, sk, IV));
-                            dos.write(message);
+                            //System.out.println(executeAESDecryption(message, sk, IV) + "");
+                            //dos.write(executeAESDecryption(message, sk, IV).getBytes());
+                            dos.writeBytes(executeAESDecryption(message, sk, IV) + "\n");
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                       // dos.writeBytes(msg+"\n");
+                       
                         
 
                         if (msg.equals("exit"))
