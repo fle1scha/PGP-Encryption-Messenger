@@ -2,18 +2,39 @@
 // Alice (Client) class that sends and receives data
 
 import java.io.*;
-import java.math.BigInteger;
 import java.net.*;
+import java.util.Base64;
 import java.util.Scanner;
 import java.security.*;
-import java.security.spec.RSAPublicKeySpec;
-
 import javax.crypto.*;
 
+
 class Alice {
+
+    public static SecretKey generateSecretAESKey() throws Exception{
+
+        // Generate Secret Key
+        SecureRandom sr = new SecureRandom();
+        byte b [] = new byte[20];
+        sr.nextBytes(b);
+
+  
+        KeyGenerator kg = KeyGenerator.getInstance( "AES" );
+        kg.init(256, sr);
+        SecretKey key = kg.generateKey();
+        return key;
+
+
+
+    }
+
+    public static final String AES = "AES";
+
     static boolean exit = false;
 
     public static void main(String[] args) throws IOException {
+
+
         Security.setProperty("crypto.policy", "unlimited");
 
         System.out.println("Alice is out of bed.");
@@ -29,6 +50,18 @@ class Alice {
 
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
+
+
+
+        try {
+            SecretKey sk = generateSecretAESKey();
+            System.out.println("Key generated...");
+            String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
+            System.out.println(encodedKey);
+        } catch (Exception e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
 
 
         
@@ -134,33 +167,5 @@ class Alice {
         readMessage.start();
     }
 
-    /*
-     * // ===================== Reading RSA public key from file ===============
-     * 
-     * readPublicKeyFromFile method.
-     * 
-     * Will read the RSA public key from the file "public.key" on the same directory
-     * to encrypt the AES key.
-     * 
-     */
-
-    PublicKey readPublicKeyFromFile(String fileName) throws IOException {
-
-        FileInputStream fileInput = new FileInputStream(fileName);
-        ObjectInputStream objectInputStream = new ObjectInputStream(new BufferedInputStream(fileInput));
-
-        try {
-            BigInteger m = (BigInteger) objectInputStream.readObject();
-            BigInteger e = (BigInteger) objectInputStream.readObject();
-            RSAPublicKeySpec keySpecifications = new RSAPublicKeySpec(m, e);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PublicKey publicKey = keyFactory.generatePublic(keySpecifications);
-            return publicKey;
-        } catch (Exception e) {
-            throw new RuntimeException("Some error in reading public key", e);
-        } finally {
-            objectInputStream.close();
-        }
-    }
 
 }
