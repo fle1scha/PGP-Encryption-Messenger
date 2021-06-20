@@ -17,9 +17,7 @@ class Bob {
         *This will instantiate the RSA object to create both public and private keys
         *They will be saved as private.key and public.key 
         */
-        RSA rsa = new RSA();
-        rsa.createRSA();
-        
+
         /*
         Security.setProperty("crypto.policy", "unlimited");
         Just testing whether the configuration works properly, should print
