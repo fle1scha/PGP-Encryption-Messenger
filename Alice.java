@@ -36,7 +36,7 @@ class Alice {
             Cipher c = Cipher.getInstance("AES/CBC/PKCS5PADDING");
             IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
             c.init(Cipher.ENCRYPT_MODE,sk,ivParameterSpec);
-            return c.doFinal(plain_text.getBytes());
+            return c.doFinal((plain_text).getBytes());
         }
         // ========================================================
 
@@ -107,9 +107,6 @@ class Alice {
 
 
 
-
-
-
         
         Thread sendMessage = new Thread(new Runnable() 
         {
@@ -123,18 +120,11 @@ class Alice {
                     byte [] message; 
                     try {
                         // write on the output stream
-                        try {
                             message = executeAESEncryption(msg, sk, IV);
-                            //System.out.println("Original Message: " + msg);
+                            System.out.println("Original Message: " + msg);
                             System.out.println("Encrypted Message: " + message);
-                            //System.out.println(executeAESDecryption(message, sk, IV) + "");
-                            //dos.write(executeAESDecryption(message, sk, IV).getBytes());
-                            dos.writeBytes(executeAESDecryption(message, sk, IV) + "\n");
-                        } catch (Exception e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                       
+                            System.out.println(executeAESDecryption(message, sk, IV));
+                            dos.writeBytes(message+"\n");
                         
 
                         if (msg.equals("exit"))
