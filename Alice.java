@@ -1,4 +1,4 @@
-// NIS 2021
+// NIS 2021 - Encryption
 // Alice (Client) class that sends and receives data
 
 import java.io.*;
