@@ -67,18 +67,20 @@ class Alice {
         }
 
     static boolean exit = false;
-
+    static SecretKey sk;
+    static byte [] IV;
     public static void main(String[] args) throws IOException {
 
         // Generating Secret Key
         // ========================================================
-
+            
         try {
-            SecretKey sk = generateSecretAESKey();
+            sk = generateSecretAESKey();
             System.out.println(" -- Secret key generated ...");
             System.out.println(" -- Converting secret key ...");
             String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
             System.out.println(" -- Secret Key: " + encodedKey);
+            IV = createInitializationVector();
         } catch (Exception e1) {
             e1.printStackTrace();
         }
@@ -118,9 +120,21 @@ class Alice {
                     // read the message to deliver.
                     String msg = keyboard.nextLine();
 
+                    byte [] message; 
                     try {
                         // write on the output stream
-                        dos.writeBytes(msg+"\n");
+                        try {
+                            message = executeAESEncryption(msg, sk, IV);
+                            System.out.println("Original Message: " + msg);
+                            System.out.println("Encrypted Message: " + message);
+                            System.out.println(executeAESDecryption(message, sk, IV));
+                            dos.write(message);
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                       // dos.writeBytes(msg+"\n");
+                        
 
                         if (msg.equals("exit"))
                         {
@@ -128,7 +142,7 @@ class Alice {
                             System.out.println("You left the chat.");
 
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
