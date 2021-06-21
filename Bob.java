@@ -5,6 +5,8 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+
 import javax.crypto.*;
 import java.security.spec.RSAPrivateKeySpec;
 import java.math.BigInteger;
@@ -12,22 +14,55 @@ import java.math.BigInteger;
 class Bob {
     static boolean exit = false;
 
-    public static void main(String[] args) throws IOException, GeneralSecurityException {
+    public static void main(String[] args) throws IOException, GeneralSecurityException, InterruptedException {
         /*
-        *This will instantiate the RSA object to create both public and private keys
-        *They will be saved as private.key and public.key 
-        */
+         * This will instantiate the RSA object to create both public and private keys
+         * They will be saved as private.key and public.key
+         */
 
         /*
-        Security.setProperty("crypto.policy", "unlimited");
-        Just testing whether the configuration works properly, should print
-        2147483647
+         * Security.setProperty("crypto.policy", "unlimited"); Just testing whether the
+         * configuration works properly, should print 2147483647 try { int maxKeySize =
+         * javax.crypto.Cipher.getMaxAllowedKeyLength("AES");
+         * System.out.println("Max Key Size for AES : " + maxKeySize); } catch
+         * (Exception e) { }
+         */
+        // Certificate Generation
+        // ========================================================
+        System.out.println("Generating public and private keys...");
+        TimeUnit.SECONDS.sleep(2);
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
+        kpGen.initialize(2048, new SecureRandom()); // Choose key strength
+        KeyPair keyPair = kpGen.generateKeyPair(); // Generate private and public keys
+        PublicKey BobPubKey = keyPair.getPublic(); // PubKey of the CA
+        PrivateKey BobPrivateKey = keyPair.getPrivate();
+
+        System.out.println("Populating certificate values...");
+        TimeUnit.SECONDS.sleep(2);
+
+        CertificateAuthority CA = new CertificateAuthority();
+        CA.setOutFile("Bob.cert");
+        CA.setSubject("Bob");
+        CA.generateSerial();
+        CA.setSubjectPubKey(BobPubKey);
+        CA.populateCert();
+
         try {
-            int maxKeySize = javax.crypto.Cipher.getMaxAllowedKeyLength("AES");
-            System.out.println("Max Key Size for AES : " + maxKeySize);
+            CA.generateCert();
+            System.out.println("Bob certicate signed and generated. See Bob.cert");
         } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
-        */
+
+
+        System.out.println("Saving CA keys to directory...");
+        TimeUnit.SECONDS.sleep(2);
+        
+        CA.savePubKey();
+        CA.savePrivKey();
+
+        // ========================================================
 
         System.out.println("Bob has started his day.\nWaiting for Alice to call...");
         /*
@@ -51,7 +86,7 @@ class Bob {
         DataOutputStream sendStream = new DataOutputStream(Alice.getOutputStream());
 
         // to read data coming from the client
-        DataInputStream dis = new DataInputStream((Alice.getInputStream()));
+        BufferedReader dis = new BufferedReader(new InputStreamReader(Alice.getInputStream()));
 
         // to read data from the keyboard
         Scanner keyboardIn = new Scanner(System.in);
@@ -75,15 +110,15 @@ class Bob {
 
                         else if (outMessage.equals("!F")) {
                             String FILE_TO_SEND = "C:\\NISTestSend\\Capture.PNG";
-                            //send File
-                            File myFile = new File (FILE_TO_SEND);
-                            byte [] mybytearray  = new byte [(int)myFile.length()];
+                            // send File
+                            File myFile = new File(FILE_TO_SEND);
+                            byte[] mybytearray = new byte[(int) myFile.length()];
                             FileInputStream fis = new FileInputStream(myFile);
                             BufferedInputStream bis = new BufferedInputStream(fis);
-                            bis.read(mybytearray,0,mybytearray.length);
+                            bis.read(mybytearray, 0, mybytearray.length);
                             OutputStream os = Alice.getOutputStream();
                             System.out.println("Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
-                            os.write(mybytearray,0,mybytearray.length);
+                            os.write(mybytearray, 0, mybytearray.length);
                             os.flush();
                             System.out.println("Done.");
                         }
@@ -107,21 +142,16 @@ class Bob {
                     try {
                         // read the message sent to this client
                         inMessage = dis.readLine();
-                        if (!exit)
-                        {
-                        if (inMessage.equals("exit"))
-                        {
-                            Alice.close();
-                            exit = true;
-                            System.out.println("Alice left the chat.");
+                        if (!exit) {
+                            if (inMessage.equals("exit")) {
+                                Alice.close();
+                                exit = true;
+                                System.out.println("Alice left the chat.");
+                            } else {
+                                System.out.println(contactName + ": " + inMessage);
+                            }
                         }
-                        else
-                        {
-                        System.out.println(contactName+": "+inMessage);
-                        }
-                    } 
-                }
-                    catch (IOException e) {
+                    } catch (IOException e) {
 
                         e.printStackTrace();
                     }
@@ -135,8 +165,8 @@ class Bob {
         sendMessage.start();
 
         /*
-         * close connection sendStream.close(); dis.close();
-         * keyboardIn.close(); serverSocket.close(); Alice.close();
+         * close connection sendStream.close(); dis.close(); keyboardIn.close();
+         * serverSocket.close(); Alice.close();
          */
 
     }
@@ -152,7 +182,7 @@ class Bob {
      * 
      */
 
-     PrivateKey readPrivateKey(String fileName) throws IOException {
+    PrivateKey readPrivateKey(String fileName) throws IOException {
         FileInputStream in = new FileInputStream(fileName);
         ObjectInputStream readObj = new ObjectInputStream(new BufferedInputStream(in));
         try {

@@ -1,10 +1,11 @@
 {
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
-        "bcprov-ext-jdk15on-169.jar",
-        "bcpkix-jdk15on-169(1).jar",
+        "BouncyCastle/**/*.jar",
         "bcjmail-jdk15on-169.jar",
-        "bcutil-jdk15on-169.jar",
-        "BouncyCastle/**/*.jar"
+        "bcpkix-jdk15on-169(1).jar",
+        "bcpkix-jdk15to18-169.jar",
+        "bcprov-ext-jdk15on-169.jar",
+        "bcutil-jdk15on-169.jar"
     ]
 }

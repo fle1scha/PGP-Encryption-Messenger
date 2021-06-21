@@ -5,12 +5,10 @@ import java.io.*;
 import java.net.*;
 import java.util.Base64;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
-
-import jdk.vm.ci.meta.PlatformKind.Key;
-
 
 class Alice {
 
@@ -79,7 +77,7 @@ class Alice {
     // ================================================================================================================
 
 
-    public static void main(String[] args) throws IOException, GeneralSecurityException {
+    public static void main(String[] args) throws Exception {
 
         // SETUP 
         // ========================================================
@@ -101,6 +99,38 @@ class Alice {
         // ========================================================
                 RSA rsa = new RSA();
                 rsa.createRSA();
+        // ========================================================
+
+        // Certificate Generation
+        // ========================================================
+        System.out.println("Generating public and private keys...");
+        TimeUnit.SECONDS.sleep(3);
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
+        kpGen.initialize(2048, new SecureRandom()); // Choose key strength
+        KeyPair keyPair = kpGen.generateKeyPair(); // Generate private and public keys
+        PublicKey AlicePubKey = keyPair.getPublic(); // PubKey of the CA
+        PrivateKey AlicePrivateKey = keyPair.getPrivate();
+
+        System.out.println("Populating certificate values...");
+        TimeUnit.SECONDS.sleep(3);
+
+        CertificateAuthority CA = new CertificateAuthority();
+        CA.setOutFile("Alice.cert");
+        CA.setSubject("Alice");
+        CA.generateSerial();
+        CA.setSubjectPubKey(AlicePubKey);
+        CA.setCAPublicKey("CAPub.pem");
+        CA.setCAPrivateKey("CAPriv.pem");
+        CA.populateCert();
+
+        try {
+            CA.generateCert();
+            System.out.println("Alice certicate signed and generated. See Alice.cert");
+        } catch (Exception e) {
+            System.out.println("here");
+            System.out.println(e.getMessage());
+        }
         // ========================================================
 
 
