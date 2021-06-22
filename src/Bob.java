@@ -9,9 +9,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.*;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 
 import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.math.BigInteger;
 
 class Bob {
@@ -21,16 +23,17 @@ class Bob {
     static X509CertificateHolder certificate;
     static PrivateKey CAPrivKey;
     static PublicKey CAPubKey;
+    static PublicKey AlicePubKey;
 
     public static void main(String[] args) throws Exception {
 
         // Certificate Generation
         // ========================================================
         System.out.println("Generating public and private keys...");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
         genCertificate();
         System.out.println("Bob is up and running.");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
         System.out.println("Waiting for Alice to connect...");
         /*
          * Create Server Socket: A server socket waits for requests to come in over the
@@ -65,12 +68,13 @@ class Bob {
         sendStream.writeInt(messageDigest.length);
         sendStream.write(messageDigest);
 
+        
         // Receive Message Digest
         int byteLength = dis.readInt();
         byte[] inmessageDigest = new byte[byteLength];
         dis.readFully(inmessageDigest);
         System.out.println("Alice message Digest received");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending certifificate to Alice for TLS Handshake");
         sendStream.writeInt(certEncoded.length);
@@ -80,17 +84,23 @@ class Bob {
         byte[] cert = new byte[byteLength];
         dis.readFully(cert);
         X509CertificateHolder AliceCert = new X509CertificateHolder(cert);
+        SubjectPublicKeyInfo tempCert = AliceCert.getSubjectPublicKeyInfo();
+        byte[] tempArray = tempCert.getEncoded();
+        
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        AlicePubKey = kf.generatePublic(spec);
         System.out.println("Alice certificate received");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
 
         // Bob must now compare her message digest to Bob's message digest.
         byte[] BobDigest = genDigest(AliceCert);
 
         if (RSA.authenticate(BobDigest, inmessageDigest, CAPubKey)) {
-            TimeUnit.SECONDS.sleep(1);
+            //TimeUnit.SECONDS.sleep(1);
             System.out.println("Bob's digest matches Alice's.");
             if (certificate.getIssuer().equals(AliceCert.getIssuer())) {
-                TimeUnit.SECONDS.sleep(1);
+                //TimeUnit.SECONDS.sleep(1);
                 System.out.println("Bob trusts the CA of Alice's certificate.");
 
             }
@@ -103,11 +113,13 @@ class Bob {
         }
 
         System.out.println("...");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
         System.out.println("...");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
         System.out.println("Initiating secure chat...");
-        TimeUnit.SECONDS.sleep(1);
+        //TimeUnit.SECONDS.sleep(1);
+
+        
 
         Thread sendMessage = new Thread(new Runnable() {
             String outMessage;
@@ -158,8 +170,12 @@ class Bob {
 
                 while (!exit) {
                     try {
-                        // read the message sent to this client
-                        inMessage = dis.readLine();
+                        int length = dis.readInt();
+                        byte[] inCipher = new byte[length];
+                        dis.readFully(inCipher);
+                        String plaintext = RSA.decrypt(inCipher, BobPrivKey);
+                        //byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
+                        inMessage = plaintext.toString();
                         if (!exit) {
                             if (inMessage.equals("exit")) {
                                 Alice.close();
@@ -169,7 +185,7 @@ class Bob {
                                 System.out.println(contactName + ": " + inMessage);
                             }
                         }
-                    } catch (IOException e) {
+                    } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchAlgorithmException | NoSuchPaddingException e) {
 
                         e.printStackTrace();
                     }
@@ -225,7 +241,7 @@ class Bob {
         BobPrivKey = keyPair.getPrivate();
 
         System.out.println("Populating certificate values...");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
         CA.setOutFile("./certs/Bob.cert");
@@ -238,7 +254,7 @@ class Bob {
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Bob certicate signed and generated. See Bob.cert");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         CAPubKey = CA.savePubKey();
         CAPrivKey = CA.savePrivKey();

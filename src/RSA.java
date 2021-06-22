@@ -85,9 +85,9 @@ public class RSA {
         }
     }
 
-    public byte[] encrypt(byte[] input, PublicKey publicKey) throws NoSuchAlgorithmException, NoSuchPaddingException,
+    public static byte[] encrypt(byte[] input, PublicKey publicKey) throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         cipher.update(input);
         byte[] cipherText = cipher.doFinal();
@@ -95,12 +95,12 @@ public class RSA {
 
     }
 
-    public byte[] decrypt(byte[] input, PrivateKey privateKey) throws IllegalBlockSizeException, BadPaddingException,
+    public static String decrypt(byte[] input, PrivateKey privateKey) throws IllegalBlockSizeException, BadPaddingException,
             InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] decipheredText = cipher.doFinal(input);
-        return decipheredText;
+        return new String(decipheredText, StandardCharsets.UTF_8);
     }
 
     public static boolean authenticate(byte[] generated, byte[] received, PublicKey key) throws IOException,

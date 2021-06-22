@@ -3,16 +3,23 @@
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.security.*;
+import java.security.cert.X509Certificate;
+import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.*;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.util.encoders.UTF8;
 
 class Alice {
 
@@ -24,15 +31,16 @@ class Alice {
     static X509CertificateHolder certificate;
     static PublicKey CAPubKey;
     static PrivateKey CAPrivKey;
+    static PublicKey BobPubKey;
 
     // BEGIN ALICE MAIN
     public static void main(String[] args) throws Exception {
         System.out.println("Generating public and private keys...");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
         genCertificate();
         // Create client socket
         System.out.println("Alice is connecting to Bob...");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
         Socket s = new Socket("localhost", 888);
         System.out.println("Connection established at " + s);
         String contactName = "Bob";
@@ -55,7 +63,7 @@ class Alice {
         // SETUP
         Security.setProperty("crypto.policy", "unlimited");
         
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         
 
@@ -64,7 +72,7 @@ class Alice {
         byte[] messageDigest = new byte[byteLength];
         dis.readFully(messageDigest);
         System.out.println("Bob message Digest received");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending message digest to Bob for TLS Handshake");
         dos.writeInt(outmessageDigest.length);
@@ -74,8 +82,15 @@ class Alice {
         byte[] cert = new byte[byteLength];
         dis.readFully(cert);
         X509CertificateHolder BobCert = new X509CertificateHolder(cert);
+        SubjectPublicKeyInfo tempCert = BobCert.getSubjectPublicKeyInfo();
+        byte[] tempArray = tempCert.getEncoded();
+        
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        BobPubKey = kf.generatePublic(spec);
+
         System.out.println("Bob certificate received");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending certificate to Bob for TLS Handshake");
         dos.writeInt(certEncoded.length);
@@ -86,10 +101,10 @@ class Alice {
         byte[] AliceDigest = genDigest(BobCert);
 
         if (RSA.authenticate(AliceDigest, messageDigest, CAPubKey)) {
-            TimeUnit.SECONDS.sleep(1);
+            ////TimeUnit.SECONDS.sleep(1);
             System.out.println("Alice's digest matches Bob's.");
             if (certificate.getIssuer().equals(BobCert.getIssuer())) {
-                TimeUnit.SECONDS.sleep(1);
+                ////TimeUnit.SECONDS.sleep(1);
                 System.out.println("Alice trusts the CA of Bob's certificate.");
 
             }
@@ -102,12 +117,12 @@ class Alice {
         }
 
         System.out.println("...");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
         System.out.println("...");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Initiating secure chat:");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
         try {
             sk = AES.generateAESKey();
             System.out.println("STATUS: Secret key generated ...");
@@ -125,16 +140,22 @@ class Alice {
                 while (!exit) {
 
                     // read the message to deliver.
-                    String msg = keyboard.nextLine();
 
-                    byte[] message;
+                    String msg = keyboard.nextLine();
+                    byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
+                    byte[] AEScipher;
+                    byte[] RSAcipher;
                     try {
                         // write on the output stream
-                        message = AES.AESEncryption(msg, sk, IV);
+                        //AEScipher = AES.AESEncryption(msg, sk, IV);
                         System.out.println("Original Message: " + msg);
-                        System.out.println("Encrypted Message: " + message);
-                        System.out.println(AES.AESDecryption(message, sk, IV));
-                        dos.writeBytes(message + "\n");
+                        //System.out.println("AES Encrypted Message: " + AEScipher);
+                        RSAcipher = RSA.encrypt(encodedmsg, BobPubKey);
+                        System.out.println("RSA encrypted message: "+RSAcipher);
+        
+                        
+                        dos.writeInt(RSAcipher.length);
+                        dos.write(RSAcipher);
 
                         if (msg.equals("exit")) {
                             exit = true;
@@ -228,7 +249,7 @@ class Alice {
         AlicePrivKey = keyPair.getPrivate();
 
         System.out.println("Populating certificate values...");
-        TimeUnit.SECONDS.sleep(1);
+        ////TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
         CA.setOutFile("./certs/Alice.cert");
