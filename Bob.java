@@ -8,62 +8,26 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.*;
+
+import org.bouncycastle.cert.X509CertificateHolder;
+
 import java.security.spec.RSAPrivateKeySpec;
 import java.math.BigInteger;
 
 class Bob {
     static boolean exit = false;
+    static PublicKey BobPubKey;
+    static PrivateKey BobPrivKey;
+    static X509CertificateHolder certificate;
 
-    public static void main(String[] args) throws IOException, GeneralSecurityException, InterruptedException {
-        /*
-         * This will instantiate the RSA object to create both public and private keys
-         * They will be saved as private.key and public.key
-         */
-
-        /*
-         * Security.setProperty("crypto.policy", "unlimited"); Just testing whether the
-         * configuration works properly, should print 2147483647 try { int maxKeySize =
-         * javax.crypto.Cipher.getMaxAllowedKeyLength("AES");
-         * System.out.println("Max Key Size for AES : " + maxKeySize); } catch
-         * (Exception e) { }
-         */
+    public static void main(String[] args) throws Exception {
+        
         // Certificate Generation
         // ========================================================
-        System.out.println("Generating public and private keys...");
-        TimeUnit.SECONDS.sleep(2);
-
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
-        kpGen.initialize(2048, new SecureRandom()); // Choose key strength
-        KeyPair keyPair = kpGen.generateKeyPair(); // Generate private and public keys
-        PublicKey BobPubKey = keyPair.getPublic(); // PubKey of the CA
-        PrivateKey BobPrivateKey = keyPair.getPrivate();
-
-        System.out.println("Populating certificate values...");
-        TimeUnit.SECONDS.sleep(2);
-
-        CertificateAuthority CA = new CertificateAuthority();
-        CA.setOutFile("Bob.cert");
-        CA.setSubject("Bob");
-        CA.generateSerial();
-        CA.setSubjectPubKey(BobPubKey);
-        CA.populateCert();
-
-        try {
-            CA.generateCert();
-            System.out.println("Bob certicate signed and generated. See Bob.cert");
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-
-
-        System.out.println("Saving CA keys to directory...");
-        TimeUnit.SECONDS.sleep(2);
+        genCertificate();
+        byte[] messageDigest = sign(genDigest(certificate));
+        byte[] publicKey = BobPubKey.getEncoded();
         
-        CA.savePubKey();
-        CA.savePrivKey();
-
-        // ========================================================
-
         System.out.println("Bob has started his day.\nWaiting for Alice to call...");
         /*
          * Create Server Socket: A server socket waits for requests to come in over the
@@ -91,7 +55,15 @@ class Bob {
         // to read data from the keyboard
         Scanner keyboardIn = new Scanner(System.in);
 
-        dis.readFully(b);
+        System.out.println("Sending message digest and public key to Alice for TLS Handshake");
+        sendStream.writeInt(messageDigest.length);
+        sendStream.write(messageDigest);
+        sendStream.writeInt(publicKey.length);
+        sendStream.write(publicKey);
+
+        System.out.println("..."); TimeUnit.SECONDS.sleep(1); System.out.println("..."); TimeUnit.SECONDS.sleep(1);
+        System.out.println("Initiating secure chat...");
+        TimeUnit.SECONDS.sleep(1);
 
         Thread sendMessage = new Thread(new Runnable() {
             String outMessage;
@@ -199,6 +171,60 @@ class Bob {
         } finally {
             readObj.close();
         }
+    }
+
+    public static void genCertificate() throws Exception {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
+        kpGen.initialize(2048, new SecureRandom()); // Choose key strength
+        KeyPair keyPair = kpGen.generateKeyPair(); // Generate private and public keys
+        BobPubKey = keyPair.getPublic(); // PubKey of the CA
+        BobPrivKey = keyPair.getPrivate();
+
+        System.out.println("Populating certificate values...");
+        TimeUnit.SECONDS.sleep(1);
+
+        CertificateAuthority CA = new CertificateAuthority();
+        CA.setOutFile("Bob.cert");
+        CA.setSubject("Bob");
+        CA.generateSerial();
+        CA.setSubjectPubKey(BobPubKey);
+
+        CA.populateCert();
+
+        CA.generateCert();
+        certificate = CA.getCertificate();
+        System.out.println("Bob certicate signed and generated. See Bob.cert");
+
+        CA.savePubKey();
+        CA.savePrivKey();
+
+    }
+
+    public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+        byte[] input = cert.getEncoded();
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(input);
+        byte[] digest = md.digest();
+        return digest;
+
+    }
+
+    public static byte[] sign(byte[] input) throws InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+
+        // Initializing a Cipher object
+        cipher.init(Cipher.ENCRYPT_MODE, BobPrivKey);
+
+        // Adding data to the cipher
+
+        cipher.update(input);
+
+        // encrypting the data
+        byte[] cipherText = cipher.doFinal();
+        return cipherText;
     }
 
 }
