@@ -20,11 +20,11 @@ public class AES
         return key;
     }
 
-    public static byte[] AESEncryption(String plain_text, SecretKey sk, byte[] IV) throws Exception {
+    public static byte[] AESEncryption(byte[] input, SecretKey sk, byte[] IV) throws Exception {
         Cipher c = Cipher.getInstance("AES/CBC/PKCS5PADDING");
         IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
         c.init(Cipher.ENCRYPT_MODE, sk, ivParameterSpec);
-        return c.doFinal((plain_text).getBytes());
+        return c.doFinal(input);
     }
 
     public static byte[] createInitializationVector() {
