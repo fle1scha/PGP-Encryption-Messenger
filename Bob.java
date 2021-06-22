@@ -86,10 +86,12 @@ class Bob {
         DataOutputStream sendStream = new DataOutputStream(Alice.getOutputStream());
 
         // to read data coming from the client
-        BufferedReader dis = new BufferedReader(new InputStreamReader(Alice.getInputStream()));
+        DataInputStream dis = new DataInputStream(Alice.getInputStream());
 
         // to read data from the keyboard
         Scanner keyboardIn = new Scanner(System.in);
+
+        dis.readFully(b);
 
         Thread sendMessage = new Thread(new Runnable() {
             String outMessage;
