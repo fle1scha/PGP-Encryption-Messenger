@@ -7,6 +7,7 @@ import java.util.Base64;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.security.*;
+
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 
@@ -20,6 +21,7 @@ class Alice {
     static PrivateKey AlicePrivKey;
     static PublicKey AlicePubKey;
     static X509CertificateHolder certificate;
+    static PublicKey CAPubKey;
 
     // BEGIN ALICE MAIN
     public static void main(String[] args) throws Exception {
@@ -44,19 +46,41 @@ class Alice {
 
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
-        
+
         // Receive Message Digest
         int byteLength = dis.readInt();
         byte[] messageDigest = new byte[byteLength];
         dis.readFully(messageDigest);
         System.out.println("Message Digest received");
-        
-        byteLength = dis.readInt();
-        byte[] BobPubKey = new byte[byteLength];
-        dis.readFully(BobPubKey);
-        System.out.println("Bob public key received.");
 
-        System.out.println("..."); TimeUnit.SECONDS.sleep(1); System.out.println("..."); TimeUnit.SECONDS.sleep(1);
+        byteLength = dis.readInt();
+        byte[] cert = new byte[byteLength];
+        dis.readFully(cert);
+        X509CertificateHolder BobCert = new X509CertificateHolder(cert);
+
+        // Alice must not compare her message digest to Bob's message digest.
+        byte[] AliceDigest = genDigest(BobCert);
+
+        if (authenticate(AliceDigest, messageDigest, CAPubKey)) {
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Alice's digest matches Bob's.");
+            if (certificate.getIssuer().equals(BobCert.getIssuer())) {
+                TimeUnit.SECONDS.sleep(1);
+                System.out.println("Alice trusts the CA of Bob's certificate.");
+
+            }
+
+        }
+
+        else {
+            System.out.println("This connection is not safe.");
+            System.exit(0);
+        }
+
+        System.out.println("...");
+        TimeUnit.SECONDS.sleep(1);
+        System.out.println("...");
+        TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Initiating secure chat:");
         TimeUnit.SECONDS.sleep(1);
@@ -70,7 +94,7 @@ class Alice {
         } catch (Exception e1) {
             e1.printStackTrace();
         }
-        
+
         Thread sendMessage = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -209,8 +233,7 @@ class Alice {
         return new String(result);
     }
 
-    public static void genCertificate() throws Exception
-    {
+    public static void genCertificate() throws Exception {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
         kpGen.initialize(2048, new SecureRandom()); // Choose key strength
         KeyPair keyPair = kpGen.generateKeyPair(); // Generate private and public keys
@@ -225,16 +248,36 @@ class Alice {
         CA.setSubject("Alice");
         CA.generateSerial();
         CA.setSubjectPubKey(AlicePubKey);
-        CA.setCAPublicKey("CAPub.pem");
+        CAPubKey = CA.setCAPublicKey("CAPub.pem");
         CA.setCAPrivateKey("CAPriv.pem");
         CA.populateCert();
-    
+
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Alice certicate signed and generated. See Alice.cert");
-      
+
     }
 
-    
+    public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+        System.out.println("Calculating digest...");
+        byte[] input = cert.getEncoded();
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(input);
+        byte[] digest = md.digest();
+        return digest;
+
+    }
+
+    public static boolean authenticate(byte[] alice, byte[] bob, PublicKey key)
+            throws IOException, SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+        System.out.println("Verifying signature...");
+        Signature sign = Signature.getInstance("SHA256withRSA");
+        sign.initVerify(key);
+        sign.update(alice);
+        boolean bool = sign.verify(bob);
+        return bool;
+
+    }
 
 }

@@ -19,16 +19,20 @@ class Bob {
     static PublicKey BobPubKey;
     static PrivateKey BobPrivKey;
     static X509CertificateHolder certificate;
+    static PrivateKey CAPrivKey;
 
     public static void main(String[] args) throws Exception {
-        
+
         // Certificate Generation
         // ========================================================
         genCertificate();
         byte[] messageDigest = sign(genDigest(certificate));
-        byte[] publicKey = BobPubKey.getEncoded();
+        byte[] certEncoded = certificate.getEncoded();
+
+        System.out.println("Bob is up and running.");
+        TimeUnit.SECONDS.sleep(1);
+        System.out.println("Waiting for Alice to connect...");
         
-        System.out.println("Bob has started his day.\nWaiting for Alice to call...");
         /*
          * Create Server Socket: A server socket waits for requests to come in over the
          * network. It performs some operation based on that request, and then returns a
@@ -55,13 +59,17 @@ class Bob {
         // to read data from the keyboard
         Scanner keyboardIn = new Scanner(System.in);
 
-        System.out.println("Sending message digest and public key to Alice for TLS Handshake");
+        System.out.println("Sending message digest and certificate to Alice for TLS Handshake");
         sendStream.writeInt(messageDigest.length);
         sendStream.write(messageDigest);
-        sendStream.writeInt(publicKey.length);
-        sendStream.write(publicKey);
 
-        System.out.println("..."); TimeUnit.SECONDS.sleep(1); System.out.println("..."); TimeUnit.SECONDS.sleep(1);
+        sendStream.writeInt(certEncoded.length);
+        sendStream.write(certEncoded);
+
+        System.out.println("...");
+        TimeUnit.SECONDS.sleep(1);
+        System.out.println("...");
+        TimeUnit.SECONDS.sleep(1);
         System.out.println("Initiating secure chat...");
         TimeUnit.SECONDS.sleep(1);
 
@@ -194,9 +202,10 @@ class Bob {
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Bob certicate signed and generated. See Bob.cert");
+        TimeUnit.SECONDS.sleep(1);
 
         CA.savePubKey();
-        CA.savePrivKey();
+        CAPrivKey = CA.savePrivKey();
 
     }
 
@@ -210,21 +219,15 @@ class Bob {
 
     }
 
-    public static byte[] sign(byte[] input) throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+    public static byte[] sign(byte[] input) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+        Signature sign = Signature.getInstance("SHA256withRSA");
+        sign.initSign(CAPrivKey);
 
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-
-        // Initializing a Cipher object
-        cipher.init(Cipher.ENCRYPT_MODE, BobPrivKey);
-
-        // Adding data to the cipher
-
-        cipher.update(input);
+        sign.update(input);
 
         // encrypting the data
-        byte[] cipherText = cipher.doFinal();
-        return cipherText;
+        byte[] signature = sign.sign();
+        return signature;
     }
 
 }

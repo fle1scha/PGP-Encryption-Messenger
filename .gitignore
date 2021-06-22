@@ -1,13 +1,2 @@
-Alice$1.class
-Alice$2.class
 
-RSA.class
-Alice.cert
-Alice.class
-Bob.cert
-Bob.class
-Bob$1.class
-.gitignore
-CAPriv.pem
-CAPub.pem
 
