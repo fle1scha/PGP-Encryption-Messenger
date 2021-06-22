@@ -3,6 +3,7 @@
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -53,20 +54,20 @@ class Bob {
         System.out.println("Connection established at " + Alice);
 
         // to send data to the client
-        DataOutputStream sendStream = new DataOutputStream(Alice.getOutputStream());
+        DataOutputStream dos = new DataOutputStream(Alice.getOutputStream());
 
         // to read data coming from the client
         DataInputStream dis = new DataInputStream(Alice.getInputStream());
 
         // to read data from the keyboard
-        Scanner keyboardIn = new Scanner(System.in);
+        Scanner keyboard = new Scanner(System.in);
 
         byte[] messageDigest = RSA.sign(genDigest(certificate), CAPrivKey);
         byte[] certEncoded = certificate.getEncoded();
 
         System.out.println("Sending message digest to Alice for TLS Handshake");
-        sendStream.writeInt(messageDigest.length);
-        sendStream.write(messageDigest);
+        dos.writeInt(messageDigest.length);
+        dos.write(messageDigest);
 
         
         // Receive Message Digest
@@ -77,8 +78,8 @@ class Bob {
         //TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending certifificate to Alice for TLS Handshake");
-        sendStream.writeInt(certEncoded.length);
-        sendStream.write(certEncoded);
+        dos.writeInt(certEncoded.length);
+        dos.write(certEncoded);
 
         byteLength = dis.readInt();
         byte[] cert = new byte[byteLength];
@@ -122,23 +123,32 @@ class Bob {
         
 
         Thread sendMessage = new Thread(new Runnable() {
-            String outMessage;
+            
 
             @Override
             public void run() {
                 while (!exit) {
 
+                    String msg = keyboard.nextLine();
+                    byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
+                    byte[] AEScipher;
+                    byte[] RSAcipher;
                     try {
-                        outMessage = keyboardIn.nextLine();
+                        
+                        System.out.println("Original Message: " + msg);
+                        //System.out.println("AES Encrypted Message: " + AEScipher);
+                        RSAcipher = RSA.encrypt(encodedmsg, AlicePubKey);
+                        System.out.println("RSA encrypted message: "+RSAcipher);
                         // Send message to Alice
-                        sendStream.writeBytes(outMessage + "\n");
+                        dos.writeInt(RSAcipher.length);
+                        dos.write(RSAcipher);
 
-                        if (outMessage.equals("exit")) {
+                        if (msg.equals("exit")) {
                             exit = true;
                             System.out.println("You left the chat.");
                         }
 
-                        else if (outMessage.equals("!F")) {
+                        else if (msg.equals("!F")) {
                             String FILE_TO_SEND = "C:\\NISTestSend\\Capture.PNG";
                             // send File
                             File myFile = new File(FILE_TO_SEND);
@@ -153,7 +163,7 @@ class Bob {
                             System.out.println("Done.");
                         }
 
-                    } catch (IOException e) {
+                    } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
                         e.printStackTrace();
                     }
                 }
@@ -170,13 +180,14 @@ class Bob {
 
                 while (!exit) {
                     try {
-                        int length = dis.readInt();
-                        byte[] inCipher = new byte[length];
-                        dis.readFully(inCipher);
-                        String plaintext = RSA.decrypt(inCipher, BobPrivKey);
-                        //byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
-                        inMessage = plaintext.toString();
                         if (!exit) {
+                            int length = dis.readInt();
+                            byte[] inCipher = new byte[length];
+                            dis.readFully(inCipher);
+                            String plaintext = RSA.decrypt(inCipher, BobPrivKey);
+                            // byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
+                            inMessage = plaintext.toString();
+
                             if (inMessage.equals("exit")) {
                                 Alice.close();
                                 exit = true;
@@ -199,7 +210,7 @@ class Bob {
         sendMessage.start();
 
         /*
-         * close connection sendStream.close(); dis.close(); keyboardIn.close();
+         * close connection dos.close(); dis.close(); keyboardIn.close();
          * serverSocket.close(); Alice.close();
          */
 

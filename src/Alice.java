@@ -171,14 +171,21 @@ class Alice {
         });
         // readMessage thread
         Thread readMessage = new Thread(new Runnable() {
+            String inMessage;
             @Override
             public void run() {
 
                 while (!exit) {
                     try {
                         // read the message sent to this client
-                        String inMessage = dis.readLine();
+                        
                         if (!exit) {
+                            int length = dis.readInt();
+                            byte[] inCipher = new byte[length];
+                            dis.readFully(inCipher);
+                            String plaintext = RSA.decrypt(inCipher, AlicePrivKey);
+                            //byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
+                            inMessage = plaintext.toString();
                             if (inMessage.equals("exit")) {
                                 s.close();
                                 exit = true;
@@ -225,7 +232,7 @@ class Alice {
                             }
                         }
 
-                    } catch (IOException e) {
+                    } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchAlgorithmException | NoSuchPaddingException e) {
 
                         e.printStackTrace();
                     }
