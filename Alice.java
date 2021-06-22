@@ -17,16 +17,20 @@ class Alice {
     static boolean exit = false;
     static SecretKey sk;
     static byte[] IV;
-    PrivateKey AlicePrivKey;
+    static PrivateKey AlicePrivKey;
     static PublicKey AlicePubKey;
-    X509CertificateHolder certificate;
+    static X509CertificateHolder certificate;
 
     // BEGIN ALICE MAIN
     public static void main(String[] args) throws Exception {
+        System.out.println("Generating public and private keys...");
+        TimeUnit.SECONDS.sleep(1);
+        genCertificate();
 
         // SETUP
         Security.setProperty("crypto.policy", "unlimited");
-        System.out.println("Alice is out of bed.");
+        System.out.println("Alice is connecting to Bob...");
+        TimeUnit.SECONDS.sleep(1);
 
         // Create client socket
         Socket s = new Socket("localhost", 888);
@@ -41,19 +45,27 @@ class Alice {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
         
-        // Certificate Generation
-        System.out.println("Generating public and private keys...");
+        // Receive Message Digest
+        int byteLength = dis.readInt();
+        byte[] messageDigest = new byte[byteLength];
+        dis.readFully(messageDigest);
+        System.out.println("Message Digest received");
+        
+        byteLength = dis.readInt();
+        byte[] BobPubKey = new byte[byteLength];
+        dis.readFully(BobPubKey);
+        System.out.println("Bob public key received.");
+
+        System.out.println("..."); TimeUnit.SECONDS.sleep(1); System.out.println("..."); TimeUnit.SECONDS.sleep(1);
+
+        System.out.println("Initiating secure chat:");
         TimeUnit.SECONDS.sleep(1);
-
-        genCertificate();
-
-        //Generate AES key
         try {
             sk = generateSecretAESKey();
-            System.out.println(" -- Secret key generated ...");
-            System.out.println(" -- Converting secret key ...");
+            System.out.println("STATUS: Secret key generated ...");
+            System.out.println("STATUS: Converting secret key ...");
             String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-            System.out.println(" -- Secret Key: " + encodedKey);
+            System.out.println("STATUS: Secret Key: " + encodedKey);
             IV = createInitializationVector();
         } catch (Exception e1) {
             e1.printStackTrace();
@@ -222,5 +234,7 @@ class Alice {
         System.out.println("Alice certicate signed and generated. See Alice.cert");
       
     }
+
+    
 
 }
