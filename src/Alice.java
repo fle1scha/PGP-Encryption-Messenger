@@ -48,7 +48,7 @@ class Alice {
 
         
         TimeUnit.SECONDS.sleep(2);
-        byte[] outmessageDigest = sign(genDigest(certificate));
+        byte[] outmessageDigest = RSA.sign(genDigest(certificate), CAPrivKey);
         byte[] certEncoded = certificate.getEncoded();
         
 
@@ -85,7 +85,7 @@ class Alice {
         // Alice must not compare her message digest to Bob's message digest.
         byte[] AliceDigest = genDigest(BobCert);
 
-        if (authenticate(AliceDigest, messageDigest, CAPubKey)) {
+        if (RSA.authenticate(AliceDigest, messageDigest, CAPubKey)) {
             TimeUnit.SECONDS.sleep(1);
             System.out.println("Alice's digest matches Bob's.");
             if (certificate.getIssuer().equals(BobCert.getIssuer())) {
@@ -109,12 +109,12 @@ class Alice {
         System.out.println("Initiating secure chat:");
         TimeUnit.SECONDS.sleep(1);
         try {
-            sk = generateSecretAESKey();
+            sk = AES.generateAESKey();
             System.out.println("STATUS: Secret key generated ...");
             System.out.println("STATUS: Converting secret key ...");
             String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
             System.out.println("STATUS: Secret Key: " + encodedKey);
-            IV = createInitializationVector();
+            IV = AES.createInitializationVector();
         } catch (Exception e1) {
             e1.printStackTrace();
         }
@@ -130,10 +130,10 @@ class Alice {
                     byte[] message;
                     try {
                         // write on the output stream
-                        message = executeAESEncryption(msg, sk, IV);
+                        message = AES.AESEncryption(msg, sk, IV);
                         System.out.println("Original Message: " + msg);
                         System.out.println("Encrypted Message: " + message);
-                        System.out.println(executeAESDecryption(message, sk, IV));
+                        System.out.println(AES.AESDecryption(message, sk, IV));
                         dos.writeBytes(message + "\n");
 
                         if (msg.equals("exit")) {
@@ -218,44 +218,7 @@ class Alice {
         readMessage.start();
     }
 
-    public static SecretKey generateSecretAESKey() throws Exception {
-
-        // Generate Secret Key
-        // ========================================================
-        SecureRandom sr = new SecureRandom();
-        byte b[] = new byte[20];
-        sr.nextBytes(b);
-
-        KeyGenerator kg = KeyGenerator.getInstance("AES");
-        kg.init(256, sr);
-        SecretKey key = kg.generateKey();
-        return key;
-    }
-
-    public static byte[] executeAESEncryption(String plain_text, SecretKey sk, byte[] IV) throws Exception {
-        Cipher c = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
-        c.init(Cipher.ENCRYPT_MODE, sk, ivParameterSpec);
-        return c.doFinal((plain_text).getBytes());
-    }
-
-    public static byte[] createInitializationVector() {
-
-        // Used with encryption
-        byte[] initializationVector = new byte[16];
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(initializationVector);
-        return initializationVector;
-    }
-
-    public static String executeAESDecryption(byte[] cipher_text, SecretKey sk, byte[] IV) throws Exception {
-        Cipher c = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
-
-        c.init(Cipher.DECRYPT_MODE, sk, ivParameterSpec);
-        byte[] result = c.doFinal(cipher_text);
-        return new String(result);
-    }
+    
 
     public static void genCertificate() throws Exception {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
@@ -292,29 +255,6 @@ class Alice {
         byte[] digest = md.digest();
         return digest;
 
-    }
-
-    public static boolean authenticate(byte[] alice, byte[] bob, PublicKey key)
-            throws IOException, SignatureException, NoSuchAlgorithmException, InvalidKeyException, InterruptedException {
-        System.out.println("Verifying signature...");
-        TimeUnit.SECONDS.sleep(2);
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initVerify(key);
-        sign.update(alice);
-        boolean bool = sign.verify(bob);
-        return bool;
-
-    }
-
-    public static byte[] sign(byte[] input) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(CAPrivKey);
-
-        sign.update(input);
-
-        // encrypting the data
-        byte[] signature = sign.sign();
-        return signature;
     }
 
 }

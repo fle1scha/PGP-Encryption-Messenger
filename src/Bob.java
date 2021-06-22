@@ -58,12 +58,8 @@ class Bob {
         // to read data from the keyboard
         Scanner keyboardIn = new Scanner(System.in);
 
-        byte[] messageDigest = sign(genDigest(certificate));
+        byte[] messageDigest = RSA.sign(genDigest(certificate), CAPrivKey);
         byte[] certEncoded = certificate.getEncoded();
-        
-        
-        
-        
 
         System.out.println("Sending message digest to Alice for TLS Handshake");
         sendStream.writeInt(messageDigest.length);
@@ -90,7 +86,7 @@ class Bob {
         // Bob must now compare her message digest to Bob's message digest.
         byte[] BobDigest = genDigest(AliceCert);
 
-        if (authenticate(BobDigest, inmessageDigest, CAPubKey)) {
+        if (RSA.authenticate(BobDigest, inmessageDigest, CAPubKey)) {
             TimeUnit.SECONDS.sleep(1);
             System.out.println("Bob's digest matches Alice's.");
             if (certificate.getIssuer().equals(AliceCert.getIssuer())) {
@@ -258,29 +254,6 @@ class Bob {
         md.update(input);
         byte[] digest = md.digest();
         return digest;
-
-    }
-
-    public static byte[] sign(byte[] input) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initSign(CAPrivKey);
-
-        sign.update(input);
-
-        // encrypting the data
-        byte[] signature = sign.sign();
-        return signature;
-    }
-
-    public static boolean authenticate(byte[] alice, byte[] bob, PublicKey key)
-            throws IOException, SignatureException, NoSuchAlgorithmException, InvalidKeyException, InterruptedException {
-        System.out.println("Verifying signature...");
-        TimeUnit.SECONDS.sleep(2);
-        Signature sign = Signature.getInstance("SHA256withRSA");
-        sign.initVerify(key);
-        sign.update(alice);
-        boolean bool = sign.verify(bob);
-        return bool;
 
     }
 
