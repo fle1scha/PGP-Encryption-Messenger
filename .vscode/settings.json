@@ -1,11 +1,16 @@
 {
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "BouncyCastle/**/*.jar",
-        "bcjmail-jdk15on-169.jar",
-        "bcpkix-jdk15on-169(1).jar",
-        "bcpkix-jdk15to18-169.jar",
-        "bcprov-ext-jdk15on-169.jar",
-        "bcutil-jdk15on-169.jar"
+    "java.project.referencedLibraries": {
+        "include": [
+            "lib/**/*.jar",
+            "BouncyCastle/**/*.jar",
+            "bcpkix-jdk15on-169(1).jar",
+            "bcprov-ext-jdk15on-169.jar",
+            "bcutil-jdk15on-169.jar"
+        ]
+    },
+    "java.project.sourcePaths": [
+        ".",
+        "src",
+        "lib"
     ]
 }

@@ -20,19 +20,18 @@ class Bob {
     static PrivateKey BobPrivKey;
     static X509CertificateHolder certificate;
     static PrivateKey CAPrivKey;
+    static PublicKey CAPubKey;
 
     public static void main(String[] args) throws Exception {
 
         // Certificate Generation
         // ========================================================
+        System.out.println("Generating public and private keys...");
+        TimeUnit.SECONDS.sleep(1);
         genCertificate();
-        byte[] messageDigest = sign(genDigest(certificate));
-        byte[] certEncoded = certificate.getEncoded();
-
         System.out.println("Bob is up and running.");
         TimeUnit.SECONDS.sleep(1);
         System.out.println("Waiting for Alice to connect...");
-        
         /*
          * Create Server Socket: A server socket waits for requests to come in over the
          * network. It performs some operation based on that request, and then returns a
@@ -59,12 +58,53 @@ class Bob {
         // to read data from the keyboard
         Scanner keyboardIn = new Scanner(System.in);
 
-        System.out.println("Sending message digest and certificate to Alice for TLS Handshake");
+        byte[] messageDigest = sign(genDigest(certificate));
+        byte[] certEncoded = certificate.getEncoded();
+        
+        
+        
+        
+
+        System.out.println("Sending message digest to Alice for TLS Handshake");
         sendStream.writeInt(messageDigest.length);
         sendStream.write(messageDigest);
 
+        // Receive Message Digest
+        int byteLength = dis.readInt();
+        byte[] inmessageDigest = new byte[byteLength];
+        dis.readFully(inmessageDigest);
+        System.out.println("Alice message Digest received");
+        TimeUnit.SECONDS.sleep(1);
+
+        System.out.println("Sending certifificate to Alice for TLS Handshake");
         sendStream.writeInt(certEncoded.length);
         sendStream.write(certEncoded);
+
+        byteLength = dis.readInt();
+        byte[] cert = new byte[byteLength];
+        dis.readFully(cert);
+        X509CertificateHolder AliceCert = new X509CertificateHolder(cert);
+        System.out.println("Alice certificate received");
+        TimeUnit.SECONDS.sleep(1);
+
+        // Bob must now compare her message digest to Bob's message digest.
+        byte[] BobDigest = genDigest(AliceCert);
+
+        if (authenticate(BobDigest, inmessageDigest, CAPubKey)) {
+            TimeUnit.SECONDS.sleep(1);
+            System.out.println("Bob's digest matches Alice's.");
+            if (certificate.getIssuer().equals(AliceCert.getIssuer())) {
+                TimeUnit.SECONDS.sleep(1);
+                System.out.println("Bob trusts the CA of Alice's certificate.");
+
+            }
+
+        }
+
+        else {
+            System.out.println("This connection is not safe.");
+            System.exit(0);
+        }
 
         System.out.println("...");
         TimeUnit.SECONDS.sleep(1);
@@ -192,7 +232,7 @@ class Bob {
         TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
-        CA.setOutFile("Bob.cert");
+        CA.setOutFile("./certs/Bob.cert");
         CA.setSubject("Bob");
         CA.generateSerial();
         CA.setSubjectPubKey(BobPubKey);
@@ -204,13 +244,15 @@ class Bob {
         System.out.println("Bob certicate signed and generated. See Bob.cert");
         TimeUnit.SECONDS.sleep(1);
 
-        CA.savePubKey();
+        CAPubKey = CA.savePubKey();
         CAPrivKey = CA.savePrivKey();
 
     }
 
     public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException {
+        System.out.println("Calculating digest...");
+        TimeUnit.SECONDS.sleep(2);
         byte[] input = cert.getEncoded();
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(input);
@@ -228,6 +270,18 @@ class Bob {
         // encrypting the data
         byte[] signature = sign.sign();
         return signature;
+    }
+
+    public static boolean authenticate(byte[] alice, byte[] bob, PublicKey key)
+            throws IOException, SignatureException, NoSuchAlgorithmException, InvalidKeyException, InterruptedException {
+        System.out.println("Verifying signature...");
+        TimeUnit.SECONDS.sleep(2);
+        Signature sign = Signature.getInstance("SHA256withRSA");
+        sign.initVerify(key);
+        sign.update(alice);
+        boolean bool = sign.verify(bob);
+        return bool;
+
     }
 
 }

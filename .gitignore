@@ -1,2 +1,8 @@
 
+certs/CAPub.pem
+certs/CAPriv.pem
+certs/Bob.cert
+certs/Alice.cert
+.vscode/launch.json
+.DS_Store
 

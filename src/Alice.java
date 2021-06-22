@@ -11,6 +11,7 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.*;
 import org.bouncycastle.cert.X509CertificateHolder;
 
 class Alice {
@@ -22,20 +23,18 @@ class Alice {
     static PublicKey AlicePubKey;
     static X509CertificateHolder certificate;
     static PublicKey CAPubKey;
+    static PrivateKey CAPrivKey;
 
     // BEGIN ALICE MAIN
     public static void main(String[] args) throws Exception {
         System.out.println("Generating public and private keys...");
         TimeUnit.SECONDS.sleep(1);
         genCertificate();
-
-        // SETUP
-        Security.setProperty("crypto.policy", "unlimited");
+        // Create client socket
         System.out.println("Alice is connecting to Bob...");
         TimeUnit.SECONDS.sleep(1);
-
-        // Create client socket
         Socket s = new Socket("localhost", 888);
+        System.out.println("Connection established at " + s);
         String contactName = "Bob";
 
         // to send data to the server
@@ -47,16 +46,41 @@ class Alice {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
+        
+        TimeUnit.SECONDS.sleep(2);
+        byte[] outmessageDigest = sign(genDigest(certificate));
+        byte[] certEncoded = certificate.getEncoded();
+        
+
+        // SETUP
+        Security.setProperty("crypto.policy", "unlimited");
+        
+        TimeUnit.SECONDS.sleep(1);
+
+        
+
         // Receive Message Digest
         int byteLength = dis.readInt();
         byte[] messageDigest = new byte[byteLength];
         dis.readFully(messageDigest);
-        System.out.println("Message Digest received");
+        System.out.println("Bob message Digest received");
+        TimeUnit.SECONDS.sleep(1);
+
+        System.out.println("Sending message digest to Bob for TLS Handshake");
+        dos.writeInt(outmessageDigest.length);
+        dos.write(outmessageDigest);
 
         byteLength = dis.readInt();
         byte[] cert = new byte[byteLength];
         dis.readFully(cert);
         X509CertificateHolder BobCert = new X509CertificateHolder(cert);
+        System.out.println("Bob certificate received");
+        TimeUnit.SECONDS.sleep(1);
+
+        System.out.println("Sending certificate to Bob for TLS Handshake");
+        dos.writeInt(certEncoded.length);
+        dos.write(certEncoded);
+
 
         // Alice must not compare her message digest to Bob's message digest.
         byte[] AliceDigest = genDigest(BobCert);
@@ -244,12 +268,12 @@ class Alice {
         TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
-        CA.setOutFile("Alice.cert");
+        CA.setOutFile("./certs/Alice.cert");
         CA.setSubject("Alice");
         CA.generateSerial();
         CA.setSubjectPubKey(AlicePubKey);
-        CAPubKey = CA.setCAPublicKey("CAPub.pem");
-        CA.setCAPrivateKey("CAPriv.pem");
+        CAPubKey = CA.setCAPublicKey("./certs/CAPub.pem");
+        CAPrivKey = CA.setCAPrivateKey("./certs/CAPriv.pem");
         CA.populateCert();
 
         CA.generateCert();
@@ -259,8 +283,9 @@ class Alice {
     }
 
     public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException {
         System.out.println("Calculating digest...");
+        TimeUnit.SECONDS.sleep(2);
         byte[] input = cert.getEncoded();
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(input);
@@ -270,14 +295,26 @@ class Alice {
     }
 
     public static boolean authenticate(byte[] alice, byte[] bob, PublicKey key)
-            throws IOException, SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+            throws IOException, SignatureException, NoSuchAlgorithmException, InvalidKeyException, InterruptedException {
         System.out.println("Verifying signature...");
+        TimeUnit.SECONDS.sleep(2);
         Signature sign = Signature.getInstance("SHA256withRSA");
         sign.initVerify(key);
         sign.update(alice);
         boolean bool = sign.verify(bob);
         return bool;
 
+    }
+
+    public static byte[] sign(byte[] input) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+        Signature sign = Signature.getInstance("SHA256withRSA");
+        sign.initSign(CAPrivKey);
+
+        sign.update(input);
+
+        // encrypting the data
+        byte[] signature = sign.sign();
+        return signature;
     }
 
 }

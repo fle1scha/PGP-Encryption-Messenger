@@ -129,24 +129,26 @@ public class CertificateAuthority {
         return CertPubKey;
     }
 
-    public void setCAPrivateKey(String filename) throws Exception {
+    public PrivateKey setCAPrivateKey(String filename) throws Exception {
 
         byte[] keyBytes = Files.readAllBytes(Paths.get(filename));
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         CertPrivKey = kf.generatePrivate(spec);
+        return CertPrivKey;
     }
 
-    public void savePubKey() throws IOException {
+    public PublicKey savePubKey() throws IOException {
         byte[] encodedPubKey = CertPubKey.getEncoded();
-        FileOutputStream fos = new FileOutputStream("CAPub.pem"); // Filename
+        FileOutputStream fos = new FileOutputStream("./certs/CAPub.pem"); // Filename
         fos.write(encodedPubKey);
         fos.close();
+        return CertPubKey;
     }
 
     public PrivateKey savePrivKey() throws IOException {
         byte[] encodedPrivKey = CertPrivKey.getEncoded();
-        FileOutputStream fos = new FileOutputStream("CAPriv.pem"); // Filename
+        FileOutputStream fos = new FileOutputStream("./certs/CAPriv.pem"); // Filename
         fos.write(encodedPrivKey);
         fos.close();
         return CertPrivKey;
