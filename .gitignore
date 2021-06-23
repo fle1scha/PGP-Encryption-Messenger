@@ -6,3 +6,5 @@ certs/Alice.cert
 .vscode/launch.json
 .DS_Store
 
+AliceReceived/example.png
+example.png

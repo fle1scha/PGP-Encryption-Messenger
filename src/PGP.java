@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -7,6 +8,8 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterOutputStream;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -34,16 +37,15 @@ public class PGP {
         return messageLength;
     }
 
-    public static int getIVLength()
-    {
+    public static int getIVLength() {
         return IVLength;
     }
 
-    public static int getSessionKeyLength()
-    {
+    public static int getSessionKeyLength() {
         return sessionKeyLength;
     }
 
+    // PGP Encryption Pipeline
     public static byte[] encrypt(byte[] message, PublicKey receiverKey, PrivateKey senderKey) throws Exception {
         // Compute signed hash of message.
         byte[] hashSigned = RSA.sign(message, senderKey);
@@ -54,64 +56,103 @@ public class PGP {
         // Concatenate signed hash with message.
         System.arraycopy(hashSigned, 0, hashAndMessage, 0, hashSigned.length);
         System.arraycopy(message, 0, hashAndMessage, hashSigned.length, message.length);
-        
-        //Compression goes here
-         
-         //Encrypt message with session key. 
-         SecretKey sk = AES.generateAESKey();
-         IvParameterSpec IV = AES.createInitializationVector();
-         byte[] initializationVector = IV.getIV();
-         IVLength = initializationVector.length;
+
+        // Compress payload
+        hashAndMessage = compressBytes(hashAndMessage);
+
+        // Encrypt message with session key.
+        SecretKey sk = AES.generateAESKey();
+        IvParameterSpec IV = AES.createInitializationVector();
+        byte[] initializationVector = IV.getIV();
+        IVLength = initializationVector.length;
 
         byte[] AESEncryption = AES.AESEncryption(hashAndMessage, sk, IV);
         AESLength = AESEncryption.length;
 
-        //Encrypt session key with Public Key of receiver.
-        
-         byte[] sessionKey = RSA.encrypt(sk.getEncoded(), receiverKey);
-         sessionKeyLength = sessionKey.length;
+        // Encrypt session key with Public Key of receiver.
 
-        //Make entire payload
-         byte[] encryptedPayload = new byte[IVLength + AESEncryption.length + sessionKey.length];
-         
-         System.arraycopy(initializationVector, 0, encryptedPayload, 0, initializationVector.length);
+        byte[] sessionKey = RSA.encrypt(sk.getEncoded(), receiverKey);
+        sessionKeyLength = sessionKey.length;
 
-         System.arraycopy(sessionKey, 0, encryptedPayload, initializationVector.length, sessionKey.length);
-         System.arraycopy(AESEncryption, 0, encryptedPayload, initializationVector.length+sessionKey.length, AESEncryption.length);
-    
+        // Make entire payload
+        byte[] encryptedPayload = new byte[IVLength + AESEncryption.length + sessionKey.length];
+
+        System.arraycopy(initializationVector, 0, encryptedPayload, 0, initializationVector.length);
+
+        System.arraycopy(sessionKey, 0, encryptedPayload, initializationVector.length, sessionKey.length);
+        System.arraycopy(AESEncryption, 0, encryptedPayload, initializationVector.length + sessionKey.length,
+                AESEncryption.length);
 
         return encryptedPayload;
     }
 
-    public static String decrypt(byte[] payload, PrivateKey receiverKey, PublicKey senderKey, int ivl, int skl, int aesl, int hl, int ml)
-            throws Exception {
-        
-        //Split payload into IV
+    // PGP Decryption Pipeline
+    public static byte[] decrypt(byte[] payload, PrivateKey receiverKey, PublicKey senderKey, int ivl, int skl,
+            int aesl, int hl, int ml) throws Exception {
+
+        // Split payload into IV
         byte[] iv = Arrays.copyOfRange(payload, 0, ivl);
-        IvParameterSpec IV  = new IvParameterSpec(iv);
-        //Split payload into Session Key
+        IvParameterSpec IV = new IvParameterSpec(iv);
+        // Split payload into Session Key
         byte[] sk = Arrays.copyOfRange(payload, 16, 272);
         byte[] skdecrypted = RSA.decrypt(sk, receiverKey);
 
         SecretKeySpec sessionKey = new SecretKeySpec(skdecrypted, "AES");
 
-        //Split payload into hash and message
-        byte[] AESsegment = Arrays.copyOfRange(payload, ivl+skl, payload.length);
-        
+        // Split payload into hash and message
+        byte[] AESsegment = Arrays.copyOfRange(payload, ivl + skl, payload.length);
+
         byte[] AESdecrypted = AES.AESDecryption(AESsegment, sessionKey, IV);
-        
+
+        AESdecrypted = decompressBytes(AESdecrypted);
+
         byte[] hashSigned = Arrays.copyOfRange(AESdecrypted, 0, hl);
-        byte[] m = Arrays.copyOfRange(AESdecrypted, hl, ml+hl);
+        byte[] m = Arrays.copyOfRange(AESdecrypted, hl, ml + hl);
 
-        String message = new String(m, StandardCharsets.UTF_8);
-        if (RSA.authenticate(m, hashSigned, senderKey))
-        {
-            return message;
-        }
-        else
-        {
-            return "Local hash did not match received hash.";
+        // Authenticate using public key.
+        if (RSA.authenticate(m, hashSigned, senderKey)) {
+            return m;
+        } else {
+            return "Local hash did not match received hash.".getBytes();
         }
 
+    }
+
+    // Compress using java.util.zip
+    public static byte[] compressBytes(byte[] in) {
+
+        System.out.println("Compressing...");
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            DeflaterOutputStream defl = new DeflaterOutputStream(out);
+            defl.write(in);
+            defl.flush();
+            defl.close();
+
+            return out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(100);
+            return null;
+        }
+    }
+
+    // Decompress using java.util.zip
+    public static byte[] decompressBytes(byte[] in) {
+
+        System.out.println("Decompressing...");
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            InflaterOutputStream infl = new InflaterOutputStream(out);
+            infl.write(in);
+            infl.flush();
+            infl.close();
+
+            return out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(101);
+            return null;
+        }
     }
 }
