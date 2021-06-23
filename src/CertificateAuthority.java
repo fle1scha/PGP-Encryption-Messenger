@@ -2,7 +2,6 @@
 //Create a Self-Signed Certificate using JSE and Bouncy Castle
 //Antony Fleischer
 
-//Java imports
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -20,9 +19,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.Random;
 
-//Bouncy Castle imports
-//Must include bc .jar(s) in project folder, and add them to referenenced libraries for VS Code. 
-//Tutorials on the internet use deprecated methods so this is recent (2021).
+
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -30,7 +27,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-//(called 'CertificateAuthority for an old assignment')
+
 public class CertificateAuthority {
 
     static PublicKey SubjectPubKey;
@@ -48,40 +45,7 @@ public class CertificateAuthority {
     public CertificateAuthority() {
 
     }
-
-    public X509CertificateHolder getCertificate() {
-        return certificate;
-    }
-
-    public void setSubjectPubKey(PublicKey key) {
-        SubjectPubKey = key;
-    }
-
-    public void setSubject(String name) {
-        subject = new X500Name("CN=" + name);
-    }
-
-    public void generateSerial() {
-        Random random = new SecureRandom();
-        serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
-    }
-
-    public void setOutFile(String file) {
-        filename = file;
-    }
-
-    public PublicKey getCertPublicKey() {
-        return CertPubKey;
-    }
-
-    public void setCertPrivateKey(PrivateKey key) {
-        CertPrivKey = key;
-    }
-
-    public void setCertPublciKey(PrivateKey key) {
-        CertPrivKey = key;
-    }
-
+    //Generate certificate 
     public void generateCert() throws Exception {
 
         // Define the generator
@@ -106,6 +70,7 @@ public class CertificateAuthority {
 
     }
 
+    //Populate certificate fields. 
     public void populateCert() throws NoSuchAlgorithmException {
         // RSA Key Pair Generator using JSE
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
@@ -153,6 +118,41 @@ public class CertificateAuthority {
         fos.close();
         return CertPrivKey;
     }
+
+    public X509CertificateHolder getCertificate() {
+        return certificate;
+    }
+
+    public void setSubjectPubKey(PublicKey key) {
+        SubjectPubKey = key;
+    }
+
+    public void setSubject(String name) {
+        subject = new X500Name("CN=" + name);
+    }
+
+    public void generateSerial() {
+        Random random = new SecureRandom();
+        serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
+    }
+
+    public void setOutFile(String file) {
+        filename = file;
+    }
+
+    public PublicKey getCertPublicKey() {
+        return CertPubKey;
+    }
+
+    public void setCertPrivateKey(PrivateKey key) {
+        CertPrivKey = key;
+    }
+
+    public void setCertPublciKey(PrivateKey key) {
+        CertPrivKey = key;
+    }
+
+
 
     public static void main(String[] args) {
         System.out.println("This is the Certificate Authority class.");

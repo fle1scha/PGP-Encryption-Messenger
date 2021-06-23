@@ -65,7 +65,7 @@ class Bob {
         int byteLength = dis.readInt();
         byte[] inmessageDigest = new byte[byteLength];
         dis.readFully(inmessageDigest);
-       
+
         System.out.println("Sending certifificate to Alice for TLS Handshake");
         dos.writeInt(certEncoded.length);
         dos.write(certEncoded);
@@ -75,14 +75,13 @@ class Bob {
         byte[] cert = new byte[byteLength];
         dis.readFully(cert);
 
-        //Recreating Alice Public Key.
+        // Recreating Alice Public Key.
         X509CertificateHolder AliceCert = new X509CertificateHolder(cert);
         SubjectPublicKeyInfo tempCert = AliceCert.getSubjectPublicKeyInfo();
         byte[] tempArray = tempCert.getEncoded();
         X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         AlicePubKey = kf.generatePublic(spec);
-
 
         System.out.println("Comparing message digests");
         byte[] BobDigest = RSA.genDigest(AliceCert);
@@ -100,7 +99,6 @@ class Bob {
             System.exit(0);
         }
 
-        
         System.out.println("Initiating secure chat:");
 
         for (int i = 0; i < 4; i++) {
@@ -108,7 +106,7 @@ class Bob {
             TimeUnit.MICROSECONDS.sleep(500000);
         }
         System.out.println("\nSecure chat ready:");
-        
+
         // Send message thread
         Thread sendMessage = new Thread(new Runnable() {
 
@@ -133,7 +131,7 @@ class Bob {
                             serverSocket.close();
                         }
 
-                        //If Bob wants to send a file.
+                        // If Bob wants to send a file.
                         else if (msg.equals("!FILE")) {
                             // Get details
                             System.out.println("Enter the path to your file:");
@@ -192,7 +190,6 @@ class Bob {
                     try {
                         int type = dis.readInt();
 
-                        
                         if (!exit) {
 
                             // If Alice exits.
@@ -201,7 +198,7 @@ class Bob {
                                 exit = true;
                                 System.out.println("Alice left the chat.");
                                 System.exit(0);
-                            } 
+                            }
 
                             // If Alice sends a file.
                             else if (type == 1) {
@@ -224,8 +221,8 @@ class Bob {
 
                                 saveFile(inMessage);
 
-                            } 
-                            
+                            }
+
                             // If Alice sends a normal message.
                             else if (type == 2) {
                                 System.out.println("Receiving message.");
@@ -259,7 +256,7 @@ class Bob {
         sendMessage.start();
     }
 
-     // Generate a certificate.
+    // Generate a certificate.
     public static void genCertificate() throws Exception {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA");
         kpGen.initialize(2048, new SecureRandom());
@@ -286,7 +283,7 @@ class Bob {
 
     }
 
-    //Save a file and output caption
+    // Save a file and output caption
     public static void saveFile(Message message) {
         try {
             String fileName = message.filename;
@@ -299,7 +296,7 @@ class Bob {
             System.out.println("Successfully extracted image. Caption: " + caption);
             imageOutputStream.close();
             System.out.println("The file was saved successfully!");
-    
+
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -67,7 +67,7 @@ class Alice {
         byte[] cert = new byte[byteLength];
         dis.readFully(cert);
 
-        //Recreating Bob Public Key
+        // Recreating Bob Public Key
         X509CertificateHolder BobCert = new X509CertificateHolder(cert);
         SubjectPublicKeyInfo tempCert = BobCert.getSubjectPublicKeyInfo();
         byte[] tempArray = tempCert.getEncoded();
@@ -274,7 +274,7 @@ class Alice {
 
     }
 
-    //Save a file and output caption
+    // Save a file and output caption
     public static void saveFile(Message message) {
         try {
 
