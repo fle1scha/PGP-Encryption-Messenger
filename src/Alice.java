@@ -83,10 +83,8 @@ class Alice {
         byte[] AliceDigest = RSA.genDigest(BobCert);
 
         if (RSA.authenticate(AliceDigest, messageDigest, CAPubKey)) {
-            //// TimeUnit.SECONDS.sleep(1);
             System.out.println("Alice's digest matches Bob's.");
             if (certificate.getIssuer().equals(BobCert.getIssuer())) {
-                //// TimeUnit.SECONDS.sleep(1);
                 System.out.println("Alice trusts the CA of Bob's certificate.");
 
             }
@@ -164,6 +162,7 @@ class Alice {
                             dos.writeInt(PGP.getMessageLength());
                             dos.writeInt(PGPcipher.length);
                             dos.write(PGPcipher);
+                            System.out.println("Message sent.");
                         }
 
                     } catch (Exception e) {
@@ -197,6 +196,7 @@ class Alice {
 
                             // If Bob sends a file.
                             else if (type == 1) {
+                                System.out.println("Receiving file");
                                 int IVLength = dis.readInt();
                                 int skLength = dis.readInt();
                                 int AESLength = dis.readInt();
@@ -218,6 +218,7 @@ class Alice {
 
                             // If Bob sends a normal message.
                             else if (type == 2) {
+                                System.out.println("Receiving message.");
                                 int IVLength = dis.readInt();
                                 int skLength = dis.readInt();
                                 int AESLength = dis.readInt();

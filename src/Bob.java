@@ -88,10 +88,8 @@ class Bob {
         byte[] BobDigest = RSA.genDigest(AliceCert);
 
         if (RSA.authenticate(BobDigest, inmessageDigest, CAPubKey)) {
-            // TimeUnit.SECONDS.sleep(1);
             System.out.println("Bob's digest matches Alice's.");
             if (certificate.getIssuer().equals(AliceCert.getIssuer())) {
-                // TimeUnit.SECONDS.sleep(1);
                 System.out.println("Bob trusts the CA of Alice's certificate.");
 
             }
@@ -171,6 +169,7 @@ class Bob {
                             dos.writeInt(PGP.getMessageLength());
                             dos.writeInt(PGPcipher.length);
                             dos.write(PGPcipher);
+                            System.out.println("Message sent.");
                         }
 
                     } catch (Exception e) {
@@ -206,6 +205,7 @@ class Bob {
 
                             // If Alice sends a file.
                             else if (type == 1) {
+                                System.out.println("Receiving file");
                                 int IVLength = dis.readInt();
                                 int skLength = dis.readInt();
                                 int AESLength = dis.readInt();
@@ -228,6 +228,7 @@ class Bob {
                             
                             // If Alice sends a normal message.
                             else if (type == 2) {
+                                System.out.println("Receiving message.");
                                 int IVLength = dis.readInt();
                                 int skLength = dis.readInt();
                                 int AESLength = dis.readInt();
@@ -279,7 +280,6 @@ class Bob {
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Bob certicate signed and generated. See Bob.cert");
-        //// TimeUnit.SECONDS.sleep(1);
 
         CAPubKey = CA.savePubKey();
         CAPrivKey = CA.savePrivKey();
@@ -293,7 +293,7 @@ class Bob {
             byte[] bytes = message.file;
             String caption = message.caption;
 
-            File received = new File("./AliceReceived/" + fileName);
+            File received = new File("./BobReceived/" + fileName);
             OutputStream imageOutputStream = new FileOutputStream(received);
             imageOutputStream.write(bytes);
             System.out.println("Successfully extracted image. Caption: " + caption);

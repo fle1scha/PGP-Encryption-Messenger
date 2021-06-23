@@ -1,7 +1,6 @@
 
 import java.io.*;
 import java.security.*;
-import java.util.concurrent.TimeUnit;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -22,7 +21,7 @@ public class RSA {
     // Encrypt using Public Key
     public static byte[] encrypt(byte[] input, PublicKey publicKey) throws NoSuchAlgorithmException,
             NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        System.out.println("Decrypting using public key...");
+        System.out.println("Encrypting using public key...");
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         cipher.update(input);
@@ -45,7 +44,6 @@ public class RSA {
     public static boolean authenticate(byte[] generated, byte[] received, PublicKey key) throws IOException,
             SignatureException, NoSuchAlgorithmException, InvalidKeyException, InterruptedException {
         System.out.println("Verifying signature using public key...");
-        TimeUnit.SECONDS.sleep(2);
         Signature sign = Signature.getInstance("SHA256withRSA");
         sign.initVerify(key);
         sign.update(generated);
