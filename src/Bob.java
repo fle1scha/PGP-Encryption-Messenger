@@ -4,14 +4,20 @@
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.*;
+import java.util.Random;
 import java.util.Scanner;
 import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 
-
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.math.BigInteger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 class Bob {
     private static boolean exit = false;
@@ -23,6 +29,8 @@ class Bob {
     private static PublicKey AlicePubKey;
 
     public static void main(String[] args) throws Exception {
+        File directory = new File("./certs");
+        directory.mkdir();
 
         // Certificate Generation
         // ========================================================
@@ -101,9 +109,7 @@ class Bob {
 
             }
 
-        }
-
-        else {
+        } else {
             System.out.println("This connection is not safe.");
             System.exit(0);
         }
@@ -141,19 +147,26 @@ class Bob {
                             System.out.println("You left the chat.");
                         }
 
+                        // code for sending caption and image (can send other files as well)
                         else if (msg.equals("!F")) {
-                            String FILE_TO_SEND = "C:\\NISTestSend\\Capture.PNG";
-                            // send File
-                            File myFile = new File(FILE_TO_SEND);
-                            byte[] mybytearray = new byte[(int) myFile.length()];
-                            FileInputStream fis = new FileInputStream(myFile);
-                            BufferedInputStream bis = new BufferedInputStream(fis);
-                            bis.read(mybytearray, 0, mybytearray.length);
-                            OutputStream os = Alice.getOutputStream();
-                            System.out.println("Sending " + FILE_TO_SEND + "(" + mybytearray.length + " bytes)");
-                            os.write(mybytearray, 0, mybytearray.length);
-                            os.flush();
-                            System.out.println("Done.");
+                            //Get details
+                            System.out.println("Enter the path to your file:");
+                            String filepath = keyboard.nextLine();
+                            System.out.println("Enter your caption");
+                            String caption = keyboard.nextLine();
+
+                            // build message
+                            Message message = buildMessage(filepath, caption);
+
+                            // Compression
+                            File compressedFile = compress(message);
+
+                            // Send compressed file
+                            sendFile(compressedFile, dos);
+                            System.out.println("File sent.");
+
+                            // Delete compressed file after sending since we don't need it
+                            Files.deleteIfExists(compressedFile.toPath());
                         }
 
                     } catch (Exception e) {
@@ -176,9 +189,9 @@ class Bob {
                         if (!exit) {
                             int IVLength = dis.readInt();
                             int skLength = dis.readInt();
-                            int AESLength = dis.readInt(); 
-                            int hashLength = dis.readInt(); 
-                            int messageLength = dis.readInt(); 
+                            int AESLength = dis.readInt();
+                            int hashLength = dis.readInt();
+                            int messageLength = dis.readInt();
                             int length = dis.readInt();
                             byte[] inCipher = new byte[length];
                             dis.readFully(inCipher);
@@ -191,11 +204,31 @@ class Bob {
                                 Alice.close();
                                 exit = true;
                                 System.out.println("Alice left the chat.");
+                            } else if (inMessage.equals("!F")) {
+                                // Receiving compressed file
+                                try {
+
+                                    //System.out.println(longsize);
+
+                                    // Create Directory
+                                    File directory = new File("./BobReceived");
+                                    directory.mkdir();
+
+                                    File compressedFile = getCompressedFile(dis);
+                                    decompressFile(compressedFile);
+
+                                    //Delete temporary compressed file since we don't need it anymore
+                                    Files.deleteIfExists(compressedFile.toPath());
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
                             } else {
                                 System.out.println(contactName + ": " + inMessage);
                             }
                         }
-                    } catch ( Exception e) {
+                    } catch (Exception e) {
 
                         e.printStackTrace();
                     }
@@ -238,4 +271,120 @@ class Bob {
 
     
 
+    public static Message buildMessage(String filepath, String caption) {
+
+        File file = new File(filepath);
+        byte[] bytes = new byte[0];
+        try {
+            bytes = Files.readAllBytes(file.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new Message(file.getName(), caption, bytes);
+    }
+
+    public static File compress(Message message) {
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("tmp", ".gz", new File("."));
+//            System.out.println(tempFile);
+            FileOutputStream f = new FileOutputStream(tempFile);
+            GZIPOutputStream g = new GZIPOutputStream(f);
+            ObjectOutputStream o = new ObjectOutputStream(g);
+
+            o.writeObject(message);
+            o.flush();
+            System.out.println("Objects compressed");
+            o.close();
+            g.close();
+            f.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return tempFile;
+    }
+
+    public static void sendFile(File compressedFile, DataOutputStream dos) {
+        try {
+            if (compressedFile != null) {
+                long size = compressedFile.length();
+                String strsize = Long.toString(size) + "\n"; //file size in bytes
+                dos.writeBytes(strsize);
+                FileInputStream fis = new FileInputStream(compressedFile);
+                byte[] filebuffer = new byte[8192];
+                int read = 0;
+                while ((read = fis.read(filebuffer)) > 0) {
+                    dos.write(filebuffer, 0, read);
+                    dos.flush();
+                }
+                fis.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static File getCompressedFile(DataInputStream dis) {
+        File compressedFile = null;
+        try {
+            String tempFilePath = "./BobReceived/" + new Random().nextInt() + ".gz";
+            String size = dis.readLine();
+            long longsize = Long.parseLong(size);
+
+
+            FileOutputStream fos = new FileOutputStream(tempFilePath);
+            byte[] filebuffer = new byte[8192];
+            int read = 0;
+            long remaining = longsize;
+            long fileBufferLen = filebuffer.length;
+
+            while ((read = dis.read(filebuffer, 0, (int) Math.min(fileBufferLen, remaining))) > 0) {
+                remaining -= read;
+                fos.write(filebuffer, 0, read);
+            }
+            fos.close();
+
+            compressedFile = new File(tempFilePath);
+            System.out.println("Compressed object received");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return compressedFile;
+    }
+
+    public static void decompressFile(File compressedFile) {
+        try {
+            System.out.println("Decompressing object");
+            FileInputStream f = new FileInputStream(compressedFile);
+            GZIPInputStream g = new GZIPInputStream(f);
+            ObjectInputStream o = new ObjectInputStream(g);
+
+            Message message = (Message) o.readObject();
+
+
+            //Message Decompression into caption and image
+            String fileName = message.filename;
+            byte[] bytes = message.file;
+            String caption = message.caption;
+
+            // Write image to current directory
+            File received = new File("./BobReceived/" + fileName);
+            OutputStream imageOutputStream = new FileOutputStream(received);
+            imageOutputStream.write(bytes);
+            System.out.println("Successfully extracted image. Caption: " + caption);
+            imageOutputStream.close();
+
+            o.close();
+            g.close();
+            f.close();
+
+            System.out.println("The file was decompressed successfully!");
+            // Delete compressed file after sending since we don't need it
+        } catch (ClassNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
