@@ -123,24 +123,56 @@ class Alice {
                     // read the message to deliver.
 
                     String msg = keyboard.nextLine();
-                    byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
+                    
+                    try {
+                        byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
 
                     byte[] PGPcipher;
-                    try {
 
-                        PGPcipher = PGP.encrypt(encodedmsg, BobPubKey, AlicePrivKey);
-                        dos.writeInt(PGP.getIVLength());
-                        dos.writeInt(PGP.getSessionKeyLength());
-                        dos.writeInt(PGP.getAESLength());
-                        dos.writeInt(PGP.getHashLength());
-                        dos.writeInt(PGP.getMessageLength());
-                        dos.writeInt(PGPcipher.length);
-                        dos.write(PGPcipher);
+                        // If the user wants to send a file, then they should type F!
+                        if (msg.equals("!F"))
+                        {
+                            // Here the file and caption must be combined and converted into a byte[]. They do not have to be compressed here.
+                            /*
+                            
+                            byte[] fileAndCaption = someFunction(file and caption);
+                            encodedmsg = fileAndCaption
 
-                        if (msg.equals("exit")) {
+                            dos.writeBytes("!F".getEncoded()) //This is so the receiver knows to expect a file.
+
+                            //Then the normal encryption calls get made on 'encodedmsg', which is now the caption and file. 
+                            PGPcipher = PGP.encrypt(encodedmsg, BobPubKey, AlicePrivKey);
+                            dos.writeInt(PGP.getIVLength());
+                            dos.writeInt(PGP.getSessionKeyLength());
+                            dos.writeInt(PGP.getAESLength());
+                            dos.writeInt(PGP.getHashLength());
+                            dos.writeInt(PGP.getMessageLength());
+                            dos.writeInt(PGPcipher.length);
+                            dos.write(PGPcipher);
+
+
+                            */
+                        }
+
+                        
+                        // If the user wants to exit then they type exit
+                        else if (msg.equals("exit")) {
                             exit = true;
                             System.out.println("You left the chat.");
 
+                        }
+
+                        //User sending a normal message.
+                        else
+                        {
+                            PGPcipher = PGP.encrypt(encodedmsg, BobPubKey, AlicePrivKey);
+                            dos.writeInt(PGP.getIVLength());
+                            dos.writeInt(PGP.getSessionKeyLength());
+                            dos.writeInt(PGP.getAESLength());
+                            dos.writeInt(PGP.getHashLength());
+                            dos.writeInt(PGP.getMessageLength());
+                            dos.writeInt(PGPcipher.length);
+                            dos.write(PGPcipher);
                         }
                         // code for sending caption and image (can send other files as well)
                         else if (msg.equals("!F")) {

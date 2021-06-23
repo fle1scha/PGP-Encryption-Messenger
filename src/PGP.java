@@ -27,7 +27,7 @@ public class PGP {
         System.arraycopy(hashSigned, 0, hashAndMessage, 0, hashSigned.length);
         System.arraycopy(message, 0, hashAndMessage, hashSigned.length, message.length);
         
-        //Compression goes here
+        // @Soo, the byte array hashAndMessage must get compressed here and passed into the line where I have commmented 'input'.
          
         System.out.println("Generating one-time session key.");
          SecretKey sk = AES.generateAESKey();
@@ -36,7 +36,7 @@ public class PGP {
          IVLength = initializationVector.length;
 
         System.out.println("Encrypting payload with session key.");
-        byte[] AESEncryption = AES.AESEncryption(hashAndMessage, sk, IV);
+        byte[] AESEncryption = AES.AESEncryption(hashAndMessage, sk, IV); // input: compressed hashAndMessage goes here
         AESLength = AESEncryption.length;
 
         System.out.println("Encrypting session key with receiver public key.");
@@ -71,10 +71,10 @@ public class PGP {
         //Split payload into hash and message
         byte[] AESsegment = Arrays.copyOfRange(payload, ivl+skl, payload.length);
         
-        //Decompress goes here
+        //@Soo, the AESsegment gets decompressed here and gets fed into the line below.
 
         System.out.println("Decrypting payload body with session key.");
-        byte[] AESdecrypted = AES.AESDecryption(AESsegment, sessionKey, IV);
+        byte[] AESdecrypted = AES.AESDecryption(AESsegment, sessionKey, IV); //Decompressed segment goes here instead of AESsegment.
         
         byte[] hashSigned = Arrays.copyOfRange(AESdecrypted, 0, hl);
         byte[] m = Arrays.copyOfRange(AESdecrypted, hl, ml+hl);

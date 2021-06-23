@@ -187,6 +187,26 @@ class Bob {
                 while (!exit) {
                     try {
                         if (!exit) {
+                            /*
+
+                            Bob should check for "!F" or "exit".
+                            If !F, then then normal decryption calls can be made:
+
+                            int IVLength = dis.readInt();
+                            int skLength = dis.readInt();
+                            int AESLength = dis.readInt();
+                            int hashLength = dis.readInt();
+                            int messageLength = dis.readInt();
+                            int length = dis.readInt();
+                            byte[] inCipher = new byte[length];
+                            dis.readFully(inCipher);
+                            String plaintext = PGP.decrypt(inCipher, BobPrivKey, AlicePubKey, IVLength, skLength, AESLength, hashLength,
+                                    messageLength);
+                            String plaintext should be 'byte[] plaintext'
+
+                            Then, Bob should be able to split the byte[] he received into caption and image and save the file. 
+
+                            */
                             int IVLength = dis.readInt();
                             int skLength = dis.readInt();
                             int AESLength = dis.readInt();
