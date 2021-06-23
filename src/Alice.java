@@ -12,8 +12,10 @@ import java.util.concurrent.TimeUnit;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterOutputStream;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -164,6 +166,15 @@ class Alice {
 
                             // build message
                             Message message = buildMessage(filepath, caption);
+
+                            byte[] messageAsBytes = messageToBytes(message);
+                            // TODO sending encrypted Message as bytes.
+                            //  The below currently still compresses the Message object into a file,
+                            //  and sends the file without encryption.
+                            //  Use compressBytes and decompressBytes to compress/decompress bytes.
+                            //  I'd imagine that you would apply compression to the messageAsBytes array,
+                            //  and write to the dos the bytes to send. In this case sendFile would need to be modified,
+                            //  so that it no longer tries to read from a file and sends from the encrypted byte array.
 
                             // Compression
                             File compressedFile = compress(message);
@@ -405,5 +416,70 @@ class Alice {
             e.printStackTrace();
         }
     }
+    public static byte[] messageToBytes(Message message) {
+        byte[] data = null;
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(message);
+            oos.flush();
+            data = bos.toByteArray();
+            bos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+    public static Message messageFromBytes(byte[] someBytes) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(someBytes);
+        ObjectInput in = null;
+        Message message = null;
+        try {
+            in = new ObjectInputStream(bis);
+            Object o = in.readObject();
+            message = (Message) o;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+        return message;
+    }
+    public static byte[] compressBytes(byte[] in) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            DeflaterOutputStream defl = new DeflaterOutputStream(out);
+            defl.write(in);
+            defl.flush();
+            defl.close();
 
+            return out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(100);
+            return null;
+        }
+    }
+
+    public static byte[] decompressBytes(byte[] in) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            InflaterOutputStream infl = new InflaterOutputStream(out);
+            infl.write(in);
+            infl.flush();
+            infl.close();
+
+            return out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(101);
+            return null;
+        }
+    }
 }
