@@ -131,17 +131,20 @@ class Bob {
 
                     String msg = keyboard.nextLine();
                     byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
-                    byte[] AEScipher;
-                    byte[] RSAcipher;
+                    byte[] PGPcipher;
+                    
                     try {
-                        
+                        // write on the output stream
+                        //AEScipher = AES.AESEncryption(msg, sk, IV);
                         System.out.println("Original Message: " + msg);
                         //System.out.println("AES Encrypted Message: " + AEScipher);
-                        RSAcipher = RSA.encrypt(encodedmsg, AlicePubKey);
-                        System.out.println("RSA encrypted message: "+RSAcipher);
-                        // Send message to Alice
-                        dos.writeInt(RSAcipher.length);
-                        dos.write(RSAcipher);
+                        PGPcipher = PGP.encrypt(encodedmsg, AlicePubKey, BobPrivKey);
+                        System.out.println("PGP encrypted message: "+PGPcipher);
+        
+                        dos.writeInt(PGP.getHashLength());
+                        dos.writeInt(PGP.getMessageLength());
+                        dos.writeInt(PGPcipher.length);
+                        dos.write(PGPcipher);
 
                         if (msg.equals("exit")) {
                             exit = true;
@@ -163,7 +166,7 @@ class Bob {
                             System.out.println("Done.");
                         }
 
-                    } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -181,10 +184,12 @@ class Bob {
                 while (!exit) {
                     try {
                         if (!exit) {
+                            int hashLength = dis.readInt();
+                            int messageLength = dis.readInt();
                             int length = dis.readInt();
                             byte[] inCipher = new byte[length];
                             dis.readFully(inCipher);
-                            String plaintext = RSA.decrypt(inCipher, BobPrivKey);
+                            String plaintext = PGP.decrypt(inCipher, BobPrivKey, AlicePubKey, hashLength, messageLength);
                             // byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
                             inMessage = plaintext.toString();
 
@@ -196,7 +201,7 @@ class Bob {
                                 System.out.println(contactName + ": " + inMessage);
                             }
                         }
-                    } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | SignatureException | InterruptedException e) {
 
                         e.printStackTrace();
                     }

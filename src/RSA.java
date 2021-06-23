@@ -100,6 +100,7 @@ public class RSA {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] decipheredText = cipher.doFinal(input);
+        System.out.println(decipheredText);
         return new String(decipheredText, StandardCharsets.UTF_8);
     }
 

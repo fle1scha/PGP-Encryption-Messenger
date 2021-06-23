@@ -143,19 +143,21 @@ class Alice {
 
                     String msg = keyboard.nextLine();
                     byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
-                    byte[] AEScipher;
+                    
+                    byte[] PGPcipher;
                     byte[] RSAcipher;
                     try {
                         // write on the output stream
                         //AEScipher = AES.AESEncryption(msg, sk, IV);
                         System.out.println("Original Message: " + msg);
                         //System.out.println("AES Encrypted Message: " + AEScipher);
-                        RSAcipher = RSA.encrypt(encodedmsg, BobPubKey);
-                        System.out.println("RSA encrypted message: "+RSAcipher);
+                        PGPcipher = PGP.encrypt(encodedmsg, BobPubKey, AlicePrivKey);
+                        System.out.println("RSA encrypted message: "+PGPcipher);
         
-                        
-                        dos.writeInt(RSAcipher.length);
-                        dos.write(RSAcipher);
+                        dos.writeInt(PGP.getHashLength());
+                        dos.writeInt(PGP.getMessageLength());
+                        dos.writeInt(PGPcipher.length);
+                        dos.write(PGPcipher);
 
                         if (msg.equals("exit")) {
                             exit = true;
@@ -180,10 +182,14 @@ class Alice {
                         // read the message sent to this client
                         
                         if (!exit) {
-                            int length = dis.readInt();
-                            byte[] inCipher = new byte[length];
-                            dis.readFully(inCipher);
-                            String plaintext = RSA.decrypt(inCipher, AlicePrivKey);
+                                int hashLength = dis.readInt();
+                                int messageLength = dis.readInt();
+                                int length = dis.readInt();
+                                byte[] inCipher = new byte[length];
+                                dis.readFully(inCipher);
+                                String plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, hashLength, messageLength);
+                                // byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
+                                inMessage = plaintext.toString();
                             //byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
                             inMessage = plaintext.toString();
                             if (inMessage.equals("exit")) {
@@ -232,7 +238,7 @@ class Alice {
                             }
                         }
 
-                    } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    } catch (IOException | InvalidKeyException |  NoSuchAlgorithmException | SignatureException | InterruptedException e) {
 
                         e.printStackTrace();
                     }
