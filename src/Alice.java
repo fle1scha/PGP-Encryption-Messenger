@@ -4,37 +4,22 @@
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 import java.security.*;
-import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
-
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-
-import org.bouncycastle.*;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.pqc.jcajce.provider.qtesla.SignatureSpi.qTESLA;
-import org.bouncycastle.util.encoders.UTF8;
 
 class Alice {
 
-    static boolean exit = false;
-    static SecretKey sk;
-    static byte[] IV;
-    static PrivateKey AlicePrivKey;
-    static PublicKey AlicePubKey;
-    static X509CertificateHolder certificate;
-    static PublicKey CAPubKey;
-    static PrivateKey CAPrivKey;
-    static PublicKey BobPubKey;
+    private static boolean exit = false;
+    private static PrivateKey AlicePrivKey;
+    private static PublicKey AlicePubKey;
+    private static X509CertificateHolder certificate;
+    private static PublicKey CAPubKey;
+    private static PrivateKey CAPrivKey;
+    private static PublicKey BobPubKey;
 
-    // BEGIN ALICE MAIN
     public static void main(String[] args) throws Exception {
         System.out.println("Generating public and private keys...");
         //// TimeUnit.SECONDS.sleep(1);
@@ -55,8 +40,7 @@ class Alice {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
-        TimeUnit.SECONDS.sleep(2);
-        byte[] outmessageDigest = RSA.sign(genDigest(certificate), CAPrivKey);
+        byte[] outmessageDigest = RSA.sign(CertificateAuthority.genDigest(certificate), CAPrivKey);
         byte[] certEncoded = certificate.getEncoded();
 
         // SETUP
@@ -94,7 +78,7 @@ class Alice {
         dos.write(certEncoded);
 
         // Alice must now compare her message digest to Bob's message digest.
-        byte[] AliceDigest = genDigest(BobCert);
+        byte[] AliceDigest = CertificateAuthority.genDigest(BobCert);
 
         if (RSA.authenticate(AliceDigest, messageDigest, CAPubKey)) {
             //// TimeUnit.SECONDS.sleep(1);
@@ -102,9 +86,7 @@ class Alice {
             if (certificate.getIssuer().equals(BobCert.getIssuer())) {
                 //// TimeUnit.SECONDS.sleep(1);
                 System.out.println("Alice trusts the CA of Bob's certificate.");
-
             }
-
         }
 
         else {
@@ -119,11 +101,7 @@ class Alice {
 
         System.out.println("Initiating secure chat:");
         //// TimeUnit.SECONDS.sleep(1);
-       
-           //String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-           
-        
-
+    
         Thread sendMessage = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -264,18 +242,6 @@ class Alice {
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Alice certicate signed and generated. See Alice.cert");
-
-    }
-
-    public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException {
-        System.out.println("Calculating digest...");
-        TimeUnit.SECONDS.sleep(2);
-        byte[] input = cert.getEncoded();
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(input);
-        byte[] digest = md.digest();
-        return digest;
 
     }
 

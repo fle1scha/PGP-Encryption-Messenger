@@ -105,7 +105,7 @@ public class RSA {
 
     public static boolean authenticate(byte[] generated, byte[] received, PublicKey key) throws IOException,
             SignatureException, NoSuchAlgorithmException, InvalidKeyException, InterruptedException {
-        System.out.println("Verifying signature...");
+
         TimeUnit.SECONDS.sleep(2);
         Signature sign = Signature.getInstance("SHA256withRSA");
         sign.initVerify(key);

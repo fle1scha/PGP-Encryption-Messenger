@@ -6,25 +6,21 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
-
-import javax.crypto.*;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.math.BigInteger;
+
 
 class Bob {
-    static boolean exit = false;
-    static PublicKey BobPubKey;
-    static PrivateKey BobPrivKey;
-    static X509CertificateHolder certificate;
-    static PrivateKey CAPrivKey;
-    static PublicKey CAPubKey;
-    static PublicKey AlicePubKey;
+    private static boolean exit = false;
+    private static PublicKey BobPubKey;
+    private static PrivateKey BobPrivKey;
+    private static X509CertificateHolder certificate;
+    private static PrivateKey CAPrivKey;
+    private static PublicKey CAPubKey;
+    private static PublicKey AlicePubKey;
 
     public static void main(String[] args) throws Exception {
 
@@ -62,7 +58,7 @@ class Bob {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
-        byte[] messageDigest = RSA.sign(genDigest(certificate), CAPrivKey);
+        byte[] messageDigest = RSA.sign(CertificateAuthority.genDigest(certificate), CAPrivKey);
         byte[] certEncoded = certificate.getEncoded();
 
         System.out.println("Sending message digest to Alice for TLS Handshake");
@@ -94,7 +90,7 @@ class Bob {
         // TimeUnit.SECONDS.sleep(1);
 
         // Bob must now compare her message digest to Bob's message digest.
-        byte[] BobDigest = genDigest(AliceCert);
+        byte[] BobDigest = CertificateAuthority.genDigest(AliceCert);
 
         if (RSA.authenticate(BobDigest, inmessageDigest, CAPubKey)) {
             // TimeUnit.SECONDS.sleep(1);
@@ -204,7 +200,7 @@ class Bob {
                         e.printStackTrace();
                     }
                 }
-
+                keyboard.close();
                 System.exit(0);
             }
         });
@@ -212,39 +208,6 @@ class Bob {
         readMessage.start();
         sendMessage.start();
 
-        /*
-         * close connection dos.close(); dis.close(); keyboardIn.close();
-         * serverSocket.close(); Alice.close();
-         */
-
-    }
-
-    /*
-     * // ================= Read private Key from the file=======================
-     * 
-     * readPrivateKeyFromFile method reads the RSA private key from private.key file
-     * saved in same directory. the private key is used to decrypt/decipher the AES
-     * key sent by Client.
-     * 
-     * 
-     * 
-     */
-
-    PrivateKey readPrivateKey(String fileName) throws IOException {
-        FileInputStream in = new FileInputStream(fileName);
-        ObjectInputStream readObj = new ObjectInputStream(new BufferedInputStream(in));
-        try {
-            BigInteger m = (BigInteger) readObj.readObject();
-            BigInteger d = (BigInteger) readObj.readObject();
-            RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(m, d);
-            KeyFactory fact = KeyFactory.getInstance("RSA");
-            PrivateKey privateKey = fact.generatePrivate(keySpec);
-            return privateKey;
-        } catch (Exception e) {
-            throw new RuntimeException("Some error in reading private key", e);
-        } finally {
-            readObj.close();
-        }
     }
 
     public static void genCertificate() throws Exception {
@@ -255,7 +218,6 @@ class Bob {
         BobPrivKey = keyPair.getPrivate();
 
         System.out.println("Populating certificate values...");
-        //// TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
         CA.setOutFile("./certs/Bob.cert");
@@ -268,23 +230,12 @@ class Bob {
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Bob certicate signed and generated. See Bob.cert");
-        //// TimeUnit.SECONDS.sleep(1);
 
         CAPubKey = CA.savePubKey();
         CAPrivKey = CA.savePrivKey();
 
     }
 
-    public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException {
-        System.out.println("Calculating digest...");
-        TimeUnit.SECONDS.sleep(2);
-        byte[] input = cert.getEncoded();
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(input);
-        byte[] digest = md.digest();
-        return digest;
-
-    }
+    
 
 }

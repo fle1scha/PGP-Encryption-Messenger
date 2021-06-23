@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -19,6 +21,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.Random;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 //Bouncy Castle imports
 //Must include bc .jar(s) in project folder, and add them to referenenced libraries for VS Code. 
@@ -152,6 +158,16 @@ public class CertificateAuthority {
         fos.write(encodedPrivKey);
         fos.close();
         return CertPrivKey;
+    }
+    
+    public static byte[] genDigest(X509CertificateHolder cert) throws InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException, InterruptedException {
+        byte[] input = cert.getEncoded();
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(input);
+        byte[] digest = md.digest();
+        return digest;
+
     }
 
     public static void main(String[] args) {
