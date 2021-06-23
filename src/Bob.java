@@ -31,10 +31,10 @@ class Bob {
         // Certificate Generation
         // ========================================================
         System.out.println("Generating public and private keys...");
-        //TimeUnit.SECONDS.sleep(1);
+        // TimeUnit.SECONDS.sleep(1);
         genCertificate();
         System.out.println("Bob is up and running.");
-        //TimeUnit.SECONDS.sleep(1);
+        // TimeUnit.SECONDS.sleep(1);
         System.out.println("Waiting for Alice to connect...");
         /*
          * Create Server Socket: A server socket waits for requests to come in over the
@@ -69,13 +69,12 @@ class Bob {
         dos.writeInt(messageDigest.length);
         dos.write(messageDigest);
 
-        
         // Receive Message Digest
         int byteLength = dis.readInt();
         byte[] inmessageDigest = new byte[byteLength];
         dis.readFully(inmessageDigest);
         System.out.println("Alice message Digest received");
-        //TimeUnit.SECONDS.sleep(1);
+        // TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending certifificate to Alice for TLS Handshake");
         dos.writeInt(certEncoded.length);
@@ -87,21 +86,21 @@ class Bob {
         X509CertificateHolder AliceCert = new X509CertificateHolder(cert);
         SubjectPublicKeyInfo tempCert = AliceCert.getSubjectPublicKeyInfo();
         byte[] tempArray = tempCert.getEncoded();
-        
+
         X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         AlicePubKey = kf.generatePublic(spec);
         System.out.println("Alice certificate received");
-        //TimeUnit.SECONDS.sleep(1);
+        // TimeUnit.SECONDS.sleep(1);
 
         // Bob must now compare her message digest to Bob's message digest.
         byte[] BobDigest = genDigest(AliceCert);
 
         if (RSA.authenticate(BobDigest, inmessageDigest, CAPubKey)) {
-            //TimeUnit.SECONDS.sleep(1);
+            // TimeUnit.SECONDS.sleep(1);
             System.out.println("Bob's digest matches Alice's.");
             if (certificate.getIssuer().equals(AliceCert.getIssuer())) {
-                //TimeUnit.SECONDS.sleep(1);
+                // TimeUnit.SECONDS.sleep(1);
                 System.out.println("Bob trusts the CA of Alice's certificate.");
 
             }
@@ -114,16 +113,13 @@ class Bob {
         }
 
         System.out.println("...");
-        //TimeUnit.SECONDS.sleep(1);
+        // TimeUnit.SECONDS.sleep(1);
         System.out.println("...");
-        //TimeUnit.SECONDS.sleep(1);
+        // TimeUnit.SECONDS.sleep(1);
         System.out.println("Initiating secure chat...");
-        //TimeUnit.SECONDS.sleep(1);
-
-        
+        // TimeUnit.SECONDS.sleep(1);
 
         Thread sendMessage = new Thread(new Runnable() {
-            
 
             @Override
             public void run() {
@@ -132,15 +128,13 @@ class Bob {
                     String msg = keyboard.nextLine();
                     byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
                     byte[] PGPcipher;
-                    
+
                     try {
-                        // write on the output stream
-                        //AEScipher = AES.AESEncryption(msg, sk, IV);
-                        System.out.println("Original Message: " + msg);
-                        //System.out.println("AES Encrypted Message: " + AEScipher);
+
                         PGPcipher = PGP.encrypt(encodedmsg, AlicePubKey, BobPrivKey);
-                        System.out.println("PGP encrypted message: "+PGPcipher);
-        
+                        dos.writeInt(PGP.getIVLength());
+                        dos.writeInt(PGP.getSessionKeyLength());
+                        dos.writeInt(PGP.getAESLength());
                         dos.writeInt(PGP.getHashLength());
                         dos.writeInt(PGP.getMessageLength());
                         dos.writeInt(PGPcipher.length);
@@ -184,12 +178,16 @@ class Bob {
                 while (!exit) {
                     try {
                         if (!exit) {
-                            int hashLength = dis.readInt();
-                            int messageLength = dis.readInt();
+                            int IVLength = dis.readInt();
+                            int skLength = dis.readInt();
+                            int AESLength = dis.readInt(); 
+                            int hashLength = dis.readInt(); 
+                            int messageLength = dis.readInt(); 
                             int length = dis.readInt();
                             byte[] inCipher = new byte[length];
                             dis.readFully(inCipher);
-                            String plaintext = PGP.decrypt(inCipher, BobPrivKey, AlicePubKey, hashLength, messageLength);
+                            String plaintext = PGP.decrypt(inCipher, BobPrivKey, AlicePubKey, IVLength, skLength, AESLength, hashLength,
+                                    messageLength);
                             // byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
                             inMessage = plaintext.toString();
 
@@ -201,7 +199,7 @@ class Bob {
                                 System.out.println(contactName + ": " + inMessage);
                             }
                         }
-                    } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | SignatureException | InterruptedException e) {
+                    } catch ( Exception e) {
 
                         e.printStackTrace();
                     }
@@ -257,7 +255,7 @@ class Bob {
         BobPrivKey = keyPair.getPrivate();
 
         System.out.println("Populating certificate values...");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
         CA.setOutFile("./certs/Bob.cert");
@@ -270,7 +268,7 @@ class Bob {
         CA.generateCert();
         certificate = CA.getCertificate();
         System.out.println("Bob certicate signed and generated. See Bob.cert");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
 
         CAPubKey = CA.savePubKey();
         CAPrivKey = CA.savePrivKey();

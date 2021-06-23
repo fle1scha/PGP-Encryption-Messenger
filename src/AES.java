@@ -20,28 +20,26 @@ public class AES
         return key;
     }
 
-    public static byte[] AESEncryption(byte[] input, SecretKey sk, byte[] IV) throws Exception {
+    public static byte[] AESEncryption(byte[] input, SecretKey sk, IvParameterSpec IV) throws Exception {
         Cipher c = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
-        c.init(Cipher.ENCRYPT_MODE, sk, ivParameterSpec);
+        c.init(Cipher.ENCRYPT_MODE, sk, IV);
         return c.doFinal(input);
     }
 
-    public static byte[] createInitializationVector() {
+    public static IvParameterSpec createInitializationVector() {
 
         // Used with encryption
-        byte[] initializationVector = new byte[16];
+        byte[] iv = new byte[16];
         SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(initializationVector);
-        return initializationVector;
+        secureRandom.nextBytes(iv);
+        return new IvParameterSpec(iv);
     }
 
-    public static String AESDecryption(byte[] cipher_text, SecretKey sk, byte[] IV) throws Exception {
+    public static byte[] AESDecryption(byte[] cipher_text, SecretKey sk, IvParameterSpec IV) throws Exception {
         Cipher c = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(IV);
 
-        c.init(Cipher.DECRYPT_MODE, sk, ivParameterSpec);
+        c.init(Cipher.DECRYPT_MODE, sk, IV);
         byte[] result = c.doFinal(cipher_text);
-        return new String(result);
+        return result;
     }
 }

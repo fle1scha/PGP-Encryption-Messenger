@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.pqc.jcajce.provider.qtesla.SignatureSpi.qTESLA;
 import org.bouncycastle.util.encoders.UTF8;
 
 class Alice {
@@ -36,11 +37,11 @@ class Alice {
     // BEGIN ALICE MAIN
     public static void main(String[] args) throws Exception {
         System.out.println("Generating public and private keys...");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
         genCertificate();
         // Create client socket
         System.out.println("Alice is connecting to Bob...");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
         Socket s = new Socket("localhost", 888);
         System.out.println("Connection established at " + s);
         String contactName = "Bob";
@@ -54,25 +55,21 @@ class Alice {
         // to read data from the keyboard
         Scanner keyboard = new Scanner(System.in);
 
-        
         TimeUnit.SECONDS.sleep(2);
         byte[] outmessageDigest = RSA.sign(genDigest(certificate), CAPrivKey);
         byte[] certEncoded = certificate.getEncoded();
-        
 
         // SETUP
         Security.setProperty("crypto.policy", "unlimited");
-        
-        ////TimeUnit.SECONDS.sleep(1);
 
-        
+        //// TimeUnit.SECONDS.sleep(1);
 
         // Receive Message Digest
         int byteLength = dis.readInt();
         byte[] messageDigest = new byte[byteLength];
         dis.readFully(messageDigest);
         System.out.println("Bob message Digest received");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending message digest to Bob for TLS Handshake");
         dos.writeInt(outmessageDigest.length);
@@ -84,27 +81,26 @@ class Alice {
         X509CertificateHolder BobCert = new X509CertificateHolder(cert);
         SubjectPublicKeyInfo tempCert = BobCert.getSubjectPublicKeyInfo();
         byte[] tempArray = tempCert.getEncoded();
-        
+
         X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         BobPubKey = kf.generatePublic(spec);
 
         System.out.println("Bob certificate received");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Sending certificate to Bob for TLS Handshake");
         dos.writeInt(certEncoded.length);
         dos.write(certEncoded);
 
-
-        // Alice must not compare her message digest to Bob's message digest.
+        // Alice must now compare her message digest to Bob's message digest.
         byte[] AliceDigest = genDigest(BobCert);
 
         if (RSA.authenticate(AliceDigest, messageDigest, CAPubKey)) {
-            ////TimeUnit.SECONDS.sleep(1);
+            //// TimeUnit.SECONDS.sleep(1);
             System.out.println("Alice's digest matches Bob's.");
             if (certificate.getIssuer().equals(BobCert.getIssuer())) {
-                ////TimeUnit.SECONDS.sleep(1);
+                //// TimeUnit.SECONDS.sleep(1);
                 System.out.println("Alice trusts the CA of Bob's certificate.");
 
             }
@@ -117,22 +113,16 @@ class Alice {
         }
 
         System.out.println("...");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
         System.out.println("...");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
 
         System.out.println("Initiating secure chat:");
-        ////TimeUnit.SECONDS.sleep(1);
-        try {
-            sk = AES.generateAESKey();
-            System.out.println("STATUS: Secret key generated ...");
-            System.out.println("STATUS: Converting secret key ...");
-            String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-            System.out.println("STATUS: Secret Key: " + encodedKey);
-            IV = AES.createInitializationVector();
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
+        //// TimeUnit.SECONDS.sleep(1);
+       
+           //String encodedKey = Base64.getEncoder().encodeToString(sk.getEncoded());
+           
+        
 
         Thread sendMessage = new Thread(new Runnable() {
             @Override
@@ -143,17 +133,14 @@ class Alice {
 
                     String msg = keyboard.nextLine();
                     byte[] encodedmsg = msg.getBytes(StandardCharsets.UTF_8);
-                    
+
                     byte[] PGPcipher;
-                    byte[] RSAcipher;
                     try {
-                        // write on the output stream
-                        //AEScipher = AES.AESEncryption(msg, sk, IV);
-                        System.out.println("Original Message: " + msg);
-                        //System.out.println("AES Encrypted Message: " + AEScipher);
+                        
                         PGPcipher = PGP.encrypt(encodedmsg, BobPubKey, AlicePrivKey);
-                        System.out.println("RSA encrypted message: "+PGPcipher);
-        
+                        dos.writeInt(PGP.getIVLength());
+                        dos.writeInt(PGP.getSessionKeyLength());
+                        dos.writeInt(PGP.getAESLength());
                         dos.writeInt(PGP.getHashLength());
                         dos.writeInt(PGP.getMessageLength());
                         dos.writeInt(PGPcipher.length);
@@ -174,23 +161,26 @@ class Alice {
         // readMessage thread
         Thread readMessage = new Thread(new Runnable() {
             String inMessage;
+
             @Override
             public void run() {
 
                 while (!exit) {
                     try {
                         // read the message sent to this client
-                        
+
                         if (!exit) {
-                                int hashLength = dis.readInt();
-                                int messageLength = dis.readInt();
-                                int length = dis.readInt();
-                                byte[] inCipher = new byte[length];
-                                dis.readFully(inCipher);
-                                String plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, hashLength, messageLength);
-                                // byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
-                                inMessage = plaintext.toString();
-                            //byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
+                            int IVLength = dis.readInt();
+                            int skLength = dis.readInt();
+                            int AESLength = dis.readInt(); 
+                            int hashLength = dis.readInt(); 
+                            int messageLength = dis.readInt(); 
+                            int length = dis.readInt();
+                            byte[] inCipher = new byte[length];
+                            dis.readFully(inCipher);
+                            String plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, IVLength, skLength, AESLength, hashLength,
+                                    messageLength);
+                            // byte[] plaintext = AES.AESDecryption(AESdecrypt, sk, IV)
                             inMessage = plaintext.toString();
                             if (inMessage.equals("exit")) {
                                 s.close();
@@ -238,7 +228,7 @@ class Alice {
                             }
                         }
 
-                    } catch (IOException | InvalidKeyException |  NoSuchAlgorithmException | SignatureException | InterruptedException e) {
+                    } catch (Exception e) {
 
                         e.printStackTrace();
                     }
@@ -252,8 +242,6 @@ class Alice {
         readMessage.start();
     }
 
-    
-
     public static void genCertificate() throws Exception {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA"); // create RSA KeyPairGenerator
         kpGen.initialize(2048, new SecureRandom()); // Choose key strength
@@ -262,7 +250,7 @@ class Alice {
         AlicePrivKey = keyPair.getPrivate();
 
         System.out.println("Populating certificate values...");
-        ////TimeUnit.SECONDS.sleep(1);
+        //// TimeUnit.SECONDS.sleep(1);
 
         CertificateAuthority CA = new CertificateAuthority();
         CA.setOutFile("./certs/Alice.cert");
