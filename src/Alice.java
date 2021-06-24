@@ -38,10 +38,8 @@ class Alice {
         genCertificate();
 
         // Create client socket
-        System.out.println("Enter the ip address of Bob:");
-        String hostIP = keyboard.nextLine();
         System.out.println("Alice is connecting to Bob...");
-        Socket s = new Socket(hostIP, 888);
+        Socket s = new Socket("localhost", 888);
         System.out.println("Connection established at " + s);
 
         // DOS to send data to Bob
