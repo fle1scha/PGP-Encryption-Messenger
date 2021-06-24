@@ -43,14 +43,13 @@ public class PGP {
         hashLength = hashSigned.length;
         messageLength = message.length;
 
-        // Concatenate signed hash with message.
+        System.out.println("Concatenating hash with original message.");
         System.arraycopy(hashSigned, 0, hashAndMessage, 0, hashSigned.length);
         System.arraycopy(message, 0, hashAndMessage, hashSigned.length, message.length);
 
         // Compress payload
         hashAndMessage = compressBytes(hashAndMessage);
 
-        // Encrypt message with session key.
         SecretKey sk = AES.generateAESKey();
         IvParameterSpec IV = AES.createInitializationVector();
         byte[] initializationVector = IV.getIV();
@@ -59,12 +58,11 @@ public class PGP {
         byte[] AESEncryption = AES.AESEncryption(hashAndMessage, sk, IV);
         AESLength = AESEncryption.length;
 
-        // Encrypt session key with Public Key of receiver.
-
+        System.out.println("Encrypting session key with public key of receiver.");
         byte[] sessionKey = RSA.encrypt(sk.getEncoded(), receiverKey);
         sessionKeyLength = sessionKey.length;
 
-        // Make entire payload
+        System.out.println("Concatenating encrypted session key with message payload.");
         byte[] encryptedPayload = new byte[IVLength + AESEncryption.length + sessionKey.length];
 
         System.arraycopy(initializationVector, 0, encryptedPayload, 0, initializationVector.length);
@@ -84,6 +82,7 @@ public class PGP {
         byte[] iv = Arrays.copyOfRange(payload, 0, ivl);
         IvParameterSpec IV = new IvParameterSpec(iv);
         // Split payload into Session Key
+        System.out.println("Decrypting session key.");
         byte[] sk = Arrays.copyOfRange(payload, 16, 272);
         byte[] skdecrypted = RSA.decrypt(sk, receiverKey);
 
@@ -91,16 +90,19 @@ public class PGP {
 
         // Split payload into hash and message
         byte[] AESsegment = Arrays.copyOfRange(payload, ivl + skl, payload.length);
-
+        
+        System.out.println("Decrypting message payload using session key.");
         byte[] AESdecrypted = AES.AESDecryption(AESsegment, sessionKey, IV);
 
         AESdecrypted = decompressBytes(AESdecrypted);
-
+        
+        System.out.println("Splitting hash and message.");
         byte[] hashSigned = Arrays.copyOfRange(AESdecrypted, 0, hl);
         byte[] m = Arrays.copyOfRange(AESdecrypted, hl, ml + hl);
 
         // Authenticate using public key.
         if (RSA.authenticate(m, hashSigned, senderKey)) {
+            System.out.println("Calculated hash matches received hash.");
             return m;
         } else {
             return "Local hash did not match received hash.".getBytes();
