@@ -166,7 +166,6 @@ class Alice {
                             dos.write(PGPcipher);
                             System.out.println("Message sent.");
                         }
-
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -185,64 +184,59 @@ class Alice {
                 while (!exit) {
                     try {
 
-                        if (!exit) {
-                            int type = dis.readInt();
+                        int type = dis.readInt();
 
-                            // If Bob exits.
-                            if (type == 0) {
-                                s.close();
-                                exit = true;
-                                System.out.println("Bob left the chat.");
-                                System.exit(0);
-                            }
+                        // If Bob exits.
+                        if (type == 0) {
+                            s.close();
+                            exit = true;
+                            System.out.println("Bob left the chat.");
+                            System.exit(0);
+                        }
 
-                            // If Bob sends a file.
-                            else if (type == 1) {
-                                System.out.println("Receiving file");
-                                int IVLength = dis.readInt();
-                                int skLength = dis.readInt();
-                                int AESLength = dis.readInt();
-                                int hashLength = dis.readInt();
-                                int messageLength = dis.readInt();
-                                int length = dis.readInt();
-                                byte[] inCipher = new byte[length];
-                                dis.readFully(inCipher);
-                                byte[] plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, IVLength, skLength,
-                                        AESLength, hashLength, messageLength);
+                        // If Bob sends a file.
+                        else if (type == 1) {
+                            System.out.println("Receiving file");
+                            int IVLength = dis.readInt();
+                            int skLength = dis.readInt();
+                            int AESLength = dis.readInt();
+                            int hashLength = dis.readInt();
+                            int messageLength = dis.readInt();
+                            int length = dis.readInt();
+                            byte[] inCipher = new byte[length];
+                            dis.readFully(inCipher);
+                            byte[] plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, IVLength, skLength,
+                                    AESLength, hashLength, messageLength);
 
-                                Message inMessage = Message.messageFromBytes(plaintext);
+                            Message inMessage = Message.messageFromBytes(plaintext);
 
-                                File directory = new File("./AliceReceived");
-                                directory.mkdir();
+                            File directory = new File("./AliceReceived");
+                            directory.mkdir();
 
-                                saveFile(inMessage);
-                            }
+                            saveFile(inMessage);
+                        }
 
-                            // If Bob sends a normal message.
-                            else if (type == 2) {
-                                System.out.println("Receiving message.");
-                                int IVLength = dis.readInt();
-                                int skLength = dis.readInt();
-                                int AESLength = dis.readInt();
-                                int hashLength = dis.readInt();
-                                int messageLength = dis.readInt();
-                                int length = dis.readInt();
-                                byte[] inCipher = new byte[length];
-                                dis.readFully(inCipher);
-                                byte[] plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, IVLength, skLength,
-                                        AESLength, hashLength, messageLength);
+                        // If Bob sends a normal message.
+                        else if (type == 2) {
+                            System.out.println("Receiving message.");
+                            int IVLength = dis.readInt();
+                            int skLength = dis.readInt();
+                            int AESLength = dis.readInt();
+                            int hashLength = dis.readInt();
+                            int messageLength = dis.readInt();
+                            int length = dis.readInt();
+                            byte[] inCipher = new byte[length];
+                            dis.readFully(inCipher);
+                            byte[] plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, IVLength, skLength,
+                                    AESLength, hashLength, messageLength);
 
-                                inMessage = new String(plaintext, StandardCharsets.UTF_8);
-                                System.out.println("Bob: " + inMessage);
-                            }
-
+                            inMessage = new String(plaintext, StandardCharsets.UTF_8);
+                            System.out.println("Bob: " + inMessage);
                         }
                     } catch (Exception e) {
-
                         e.printStackTrace();
                     }
                 }
-
                 System.exit(0);
             }
         });
