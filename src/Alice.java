@@ -120,10 +120,11 @@ class Alice {
 
                         // If Alice exits.
                         if (msg.equals("!EXIT")) {
+                            dos.writeInt(0);
                             exit = true;
                             System.out.println("You left the chat.");
                             keyboard.close();
-                            s.close();
+                            //s.close();
                         }
 
                         // If Alice wants to send a file.

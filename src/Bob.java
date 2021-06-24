@@ -127,8 +127,7 @@ class Bob {
                             exit = true;
                             System.out.println("You left the chat.");
                             keyboard.close();
-                            Alice.close();
-                            serverSocket.close();
+                            
                         }
 
                         // If Bob wants to send a file.
@@ -188,16 +187,18 @@ class Bob {
 
                 while (!exit) {
                     try {
-                        int type = dis.readInt();
+                        
 
                         if (!exit) {
+                            int type = dis.readInt();
 
                             // If Alice exits.
                             if (type == 0) {
-                                Alice.close();
+                                
                                 exit = true;
                                 System.out.println("Alice left the chat.");
                                 System.exit(0);
+                                
                             }
 
                             // If Alice sends a file.
@@ -248,6 +249,14 @@ class Bob {
                     }
                 }
 
+                
+                try {
+                    Alice.close();
+                    serverSocket.close();
+                } catch (IOException e) {
+                    
+                    e.printStackTrace();
+                }
                 System.exit(0);
             }
         });
