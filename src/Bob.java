@@ -37,13 +37,14 @@ class Bob {
         System.out.println("Generating public and private keys...");
         genCertificate();
 
-        System.out.println("Bob is up and running.");
-        System.out.println("Waiting for Alice to connect...");
+        
 
         // Create Server Socket: A server socket waits for requests to come in over the
         // network
         int port = 888;
         ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Bob is up and running.");
+        System.out.println("Waiting for Alice to connect...");
         Socket Alice = serverSocket.accept();
         System.out.println("Connection established at " + Alice);
 
@@ -141,6 +142,7 @@ class Bob {
                             Message message = Message.buildMessage(filepath, caption);
                             byte[] messageAsBytes = Message.messageToBytes(message);
 
+                            System.out.println("Initisializing PGP encryption...");
                             PGPcipher = PGP.encrypt(messageAsBytes, AlicePubKey, BobPrivKey);
                             dos.writeInt(1);
                             dos.writeInt(PGP.getIVLength());
@@ -207,6 +209,7 @@ class Bob {
                             int length = dis.readInt();
                             byte[] inCipher = new byte[length];
                             dis.readFully(inCipher);
+                            System.out.println("Initisializing PGP decryption...");
                             byte[] plaintext = PGP.decrypt(inCipher, BobPrivKey, AlicePubKey, IVLength, skLength,
                                     AESLength, hashLength, messageLength);
 

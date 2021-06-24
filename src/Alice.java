@@ -139,6 +139,7 @@ class Alice {
 
                             byte[] messageAsBytes = Message.messageToBytes(message);
 
+                            System.out.println("Initisializing PGP encryption...");
                             PGPcipher = PGP.encrypt(messageAsBytes, BobPubKey, AlicePrivKey);
                             dos.writeInt(1);
                             dos.writeInt(PGP.getIVLength());
@@ -205,6 +206,7 @@ class Alice {
                             int length = dis.readInt();
                             byte[] inCipher = new byte[length];
                             dis.readFully(inCipher);
+                            System.out.println("Initisializing PGP decryption...");
                             byte[] plaintext = PGP.decrypt(inCipher, AlicePrivKey, BobPubKey, IVLength, skLength,
                                     AESLength, hashLength, messageLength);
 
