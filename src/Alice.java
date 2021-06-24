@@ -25,6 +25,8 @@ class Alice {
     static PublicKey BobPubKey;
 
     public static void main(String[] args) throws Exception {
+        // Scanner to read data from the keyboard
+        Scanner keyboard = new Scanner(System.in);
 
         Security.setProperty("crypto.policy", "unlimited");
 
@@ -36,8 +38,10 @@ class Alice {
         genCertificate();
 
         // Create client socket
+        System.out.println("Enter the ip address of Bob:");
+        String hostIP = keyboard.nextLine();
         System.out.println("Alice is connecting to Bob...");
-        Socket s = new Socket("localhost", 888);
+        Socket s = new Socket(hostIP, 888);
         System.out.println("Connection established at " + s);
 
         // DOS to send data to Bob
@@ -45,9 +49,6 @@ class Alice {
 
         // DIS to read data coming from Bob
         DataInputStream dis = new DataInputStream(s.getInputStream());
-
-        // Scanner to read data from the keyboard
-        Scanner keyboard = new Scanner(System.in);
 
         System.out.println("Signing message digest of certificate.");
         byte[] outmessageDigest = RSA.sign(RSA.genDigest(certificate), CAPrivKey);

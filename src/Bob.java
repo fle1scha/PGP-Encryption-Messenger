@@ -25,6 +25,9 @@ class Bob {
     static PublicKey AlicePubKey;
 
     public static void main(String[] args) throws Exception {
+        // Scanner to read data from the keyboard
+        Scanner keyboard = new Scanner(System.in);
+
         Security.setProperty("crypto.policy", "unlimited");
 
         // Make directory to store certificates.
@@ -49,9 +52,6 @@ class Bob {
 
         // DIS to read from Alice.
         DataInputStream dis = new DataInputStream(Alice.getInputStream());
-
-        // Scanner to read data from the keyboard
-        Scanner keyboard = new Scanner(System.in);
 
         System.out.println("Signing message digest of certificate.");
         byte[] messageDigest = RSA.sign(RSA.genDigest(certificate), CAPrivKey);

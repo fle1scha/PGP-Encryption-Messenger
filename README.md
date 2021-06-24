@@ -9,7 +9,7 @@ Secondly, in a seperate terminal window, run: <br>
 `java Alice.java`<br>
 If Alice successfully starts then you should see a confirmation, and you will be prompted for input.
 In order to end the chat, type: exit
-In order to send an image type: !F
+In order to send an image type: !FILE
 This will terminate the connection with Bob
 
 ## Run Program
