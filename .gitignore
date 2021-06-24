@@ -8,3 +8,5 @@ certs/Alice.cert
 
 AliceReceived/example.png
 example.png
+BobReceived/README.md
+.DS_Store

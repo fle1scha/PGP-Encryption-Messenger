@@ -1,30 +1,18 @@
 # NIS Encryption Application Assignment
-In the EncryptionApp directory, first run: <br>
-`java Bob.java` <br>
-If Bob successfully starts then you should see a confirmation, and Bob will wait for a connection from Alice.
-In order to end the chat, type: exit
-This will terminate the connection with Alice
+Welcome to our implementation of PGP. Before running the program, please ensure that you have added
+the Legion of the Bouncy Castle .jar files to your project's referenced libraries. 
 
-Secondly, in a seperate terminal window, run: <br>
-`java Alice.java`<br>
-If Alice successfully starts then you should see a confirmation, and you will be prompted for input.
-In order to end the chat, type: exit
-In order to send an image type: !FILE
-This will terminate the connection with Bob
+After that, you can run the program from any IDE or VS Code. 
 
-## Run Program
-`java -cp bcprov-ext-jdk15on-169.jar Bob.java`
+1. In Bob.java, run the program.
+2. In a seperate terminal, run the Alice program program. You will be prompted to enter the IP address of Bob. 
+3. Enter the IP address of Bob. This can be `localhost` if the programs are running on the same machine, or an internal IP address.
+4. The system will them demonstrate how it exchanges and validates the certificates of Alice and Bob, before initiating a secure chat. 
+5. In the chat, type a message and hit enter to send a regular message. 
+6. To send a file, type !FILE and hit enter. You will be prompted for a file path and caption.
+7. To exit, type !EXIT. 
+8. Throughout the program's execution, the system will constantly tell the user the state of the PGP encryption process. 
 
 
-## Test Cases
-I don't know how to run tests on this.
-1. Alice sends multiple inputs in a row. PASS
-2. Bob sends multiple inputs in a row. PASS
-3. Alice sends inputs then exits. PASS
-4. Bob sends inputs then exits. PASS
-5. Chat in between Alice and Bob. PASS
+Please note, that Bouncy Castle .jars were causing compilation issues, and that is why the program has to be run via an IDE. 
 
-## Using Java Security
-https://www.tutorialspoint.com/java_cryptography/java_cryptography_quick_guide.htm
-I implemented a signature, certificate, public and private key as an example in a simple application
-The next step is to now try and implement that into our chat app
