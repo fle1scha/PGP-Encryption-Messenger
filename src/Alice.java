@@ -4,6 +4,7 @@
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.security.*;
@@ -34,8 +35,16 @@ class Alice {
         File directory = new File("./certs");
         directory.mkdir();
 
+        KeyPair keypair = RSA.genKeys();
+        AlicePrivKey = keypair.getPrivate();
+        AlicePubKey = keypair.getPublic();
+
         System.out.println("Generating public and private keys for Alice...");
-        genCertificate();
+        genCertificate(AlicePubKey);
+
+        System.out.println("Alice's Public Key: "+AlicePubKey);
+
+        
 
         // Create client socket
         System.out.println("Alice is connecting to Bob...");
@@ -73,6 +82,7 @@ class Alice {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         BobPubKey = kf.generatePublic(spec);
+        System.out.println("Bob's Public Key recreated: "+BobPubKey);
 
         System.out.println("Sending certificate to Bob for TLS Handshake");
         dos.writeInt(certEncoded.length);
@@ -246,20 +256,15 @@ class Alice {
     }
 
     // Generate a certificate.
-    public static void genCertificate() throws Exception {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA");
-        kpGen.initialize(2048, new SecureRandom());
-        KeyPair keyPair = kpGen.generateKeyPair();
-        AlicePubKey = keyPair.getPublic();
-        AlicePrivKey = keyPair.getPrivate();
-
+    public static void genCertificate(PublicKey alice) throws Exception {
+      
         System.out.println("Populating certificate values...");
 
         CertificateAuthority CA = new CertificateAuthority();
         CA.setOutFile("./certs/Alice.cert");
         CA.setSubject("Alice");
         CA.generateSerial();
-        CA.setSubjectPubKey(AlicePubKey);
+        CA.setSubjectPubKey(alice);
         CAPubKey = CA.setCAPublicKey("./certs/CAPub.pem");
         CAPrivKey = CA.setCAPrivateKey("./certs/CAPriv.pem");
         CA.populateCert();

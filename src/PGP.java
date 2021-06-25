@@ -2,6 +2,7 @@ import java.io.ByteArrayOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterOutputStream;
 import javax.crypto.SecretKey;
@@ -71,6 +72,7 @@ public class PGP {
         System.arraycopy(AESEncryption, 0, encryptedPayload, initializationVector.length + sessionKey.length,
                 AESEncryption.length);
 
+        System.out.println("Encrypted message: "+BytestoString(encryptedPayload));
         return encryptedPayload;
     }
 
@@ -103,9 +105,13 @@ public class PGP {
         // Authenticate using public key.
         if (RSA.authenticate(m, hashSigned, senderKey)) {
             System.out.println("Calculated hash matches received hash.");
+            System.out.println("Successfully decrypted");
             return m;
         } else {
-            return "Local hash did not match received hash.".getBytes();
+            
+            System.out.println("CONNECTION NOT SAFE. HASHES DO NOT MATCH. EXITING NOW.");
+            System.exit(0);
+            return m;
         }
 
     }
@@ -146,5 +152,11 @@ public class PGP {
             System.exit(101);
             return null;
         }
+    }
+
+    public static String BytestoString(byte[] input)
+    {
+        String stringKey = Base64.getEncoder().encodeToString(input);
+        return stringKey;
     }
 }

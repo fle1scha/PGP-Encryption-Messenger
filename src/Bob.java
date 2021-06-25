@@ -6,7 +6,6 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 import java.security.*;
-
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -35,10 +34,16 @@ class Bob {
         directory.mkdir();
 
         System.out.println("Generating public and private keys...");
-        genCertificate();
+        KeyPair keypair = RSA.genKeys();
+        BobPrivKey = keypair.getPrivate();
+        BobPubKey = keypair.getPublic();
+        genCertificate(BobPubKey);
 
-        
+        System.out.println("Bob's Public Key: "+BobPubKey);
 
+
+
+    
         // Create Server Socket: A server socket waits for requests to come in over the
         // network
         int port = 888;
@@ -83,6 +88,7 @@ class Bob {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(tempArray);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         AlicePubKey = kf.generatePublic(spec);
+        System.out.println("Alice's Public Key recreated: "+AlicePubKey);
 
         System.out.println("Comparing message digests");
         byte[] BobDigest = RSA.genDigest(AliceCert);
@@ -261,12 +267,7 @@ class Bob {
     }
 
     // Generate a certificate.
-    public static void genCertificate() throws Exception {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA");
-        kpGen.initialize(2048, new SecureRandom());
-        KeyPair keyPair = kpGen.generateKeyPair();
-        BobPubKey = keyPair.getPublic();
-        BobPrivKey = keyPair.getPrivate();
+    public static void genCertificate(PublicKey bob) throws Exception {
 
         System.out.println("Populating certificate values...");
 
@@ -274,7 +275,7 @@ class Bob {
         CA.setOutFile("./certs/Bob.cert");
         CA.setSubject("Bob");
         CA.generateSerial();
-        CA.setSubjectPubKey(BobPubKey);
+        CA.setSubjectPubKey(bob);
 
         CA.populateCert();
 
